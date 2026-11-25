@@ -22,11 +22,11 @@
 
         說明：
           - 沒有參數或參數無效時：
-              電腦：每次進入網頁，從單一模式中隨機選一個（不包括 mixed），並重複跑該模式，直到重新整理網頁。
+              電腦：每次進入網頁，從電腦模式（compile / download / log / pkg / install / update）中隨機選一個，並重複跑該模式，直到重新整理網頁（不會隨機到 iphone / android / charge）。
               手機：iPhone 預設跑 iphone，Android 預設跑 android（其他手機隨機）。
           - 手機點一下螢幕進入全螢幕（Android Chrome）；iPhone 請用「分享 → 加入主畫面」後從主畫面開啟。
           - 指定單一模式時，只會重複跑該模式。
-          - mixed 每個模式跑完一輪後，隨機換成另一個模式，直到重新整理網頁。
+          - mixed 每個模式跑完一輪後，隨機換成另一個模式，直到重新整理網頁（電腦只會在電腦模式之間切換，不會切換到手機相關模式）。
           - 速度每 30 秒隨機變化一次（0.2 ~ 0.5 倍）。
 
         範例：
@@ -1404,7 +1404,10 @@
 
   /* ---------- 控制 ---------- */
   const RUNNERS = { compile, download, log, pkg, install };
-  const POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'iphone', 'android', 'charge'];
+  const DESKTOP_POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update'];
+  const MOBILE_POOL = ['iphone', 'android', 'charge'];
+  const ALL_MODES = [...DESKTOP_POOL, ...MOBILE_POOL];
+  const isMobile = /Android|iPhone|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia('(pointer: coarse)').matches && innerWidth <= 820);
 
   function show(m) {
     const mobileScreen = m === 'iphone' || m === 'android';
@@ -1420,9 +1423,11 @@
   }
 
   // 單一模式：重複跑同一個模式；混合 (mixed)：每跑完一輪，隨機跳到另一個模式（不連續重複）
+  // 電腦端（!isMobile）的 mixed 只會在電腦模式間切換，不會跳到手機相關模式
   async function loop(id, startMode) {
     const mixed = startMode === 'mixed';
-    let cur = mixed ? pick(POOL) : startMode;
+    const pool = isMobile ? ALL_MODES : DESKTOP_POOL;
+    let cur = mixed ? pick(pool) : startMode;
     try {
       while (true) {
         show(cur);
@@ -1430,7 +1435,7 @@
         else if (cur === 'charge') await chargeScreen(id);
         else if (cur === 'iphone' || cur === 'android') await phoneUpdate(id, cur);
         else { await RUNNERS[cur](id); addLine(''); await sleep(id, rand(400, 1500)); }
-        if (mixed) cur = pick(POOL.filter(m => m !== cur));
+        if (mixed) cur = pick(pool.filter(m => m !== cur));
       }
     } catch (e) { if (e !== CANCEL) console.error('[錯誤]', e); }
   }
@@ -1464,7 +1469,6 @@
   }
 
   // 手機：點一下螢幕進入全螢幕（Android Chrome 支援；iPhone Safari 不支援，請用「加入主畫面」）
-  const isMobile = /Android|iPhone|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia('(pointer: coarse)').matches && innerWidth <= 820);
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const rfs = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
   if (isMobile && !standalone && rfs) {
@@ -1474,12 +1478,12 @@
   }
 
   // 網址參數 ?mode=... 指定模式；沒有參數（或參數無效）時：
-  //   手機 → iPhone 跑 iphone、Android 跑 android（其他手機隨機）；電腦 → 從單一模式中隨機選一個（不包括 mixed）
+  //   手機 → iPhone 跑 iphone、Android 跑 android（其他手機隨機）；電腦 → 從 DESKTOP_POOL 隨機選一個（不含 mixed 與手機相關模式）
   //   ?mode=phone 為自動：依裝置判斷 iphone / android，無法判斷時隨機
   const ua = navigator.userAgent;
   const phoneMode = /iPhone|iPod|iPad/i.test(ua) ? 'iphone' : /Android/i.test(ua) ? 'android' : pick(['iphone', 'android']);
   const q = new URLSearchParams(location.search).get('mode');
-  const start = q === 'phone' ? phoneMode : POOL.includes(q) || q === 'mixed' ? q : (isMobile ? phoneMode : pick(POOL));
+  const start = q === 'phone' ? phoneMode : ALL_MODES.includes(q) || q === 'mixed' ? q : (isMobile ? phoneMode : pick(DESKTOP_POOL));
   loop(++run, start);
 })();
 </script>

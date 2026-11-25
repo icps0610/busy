@@ -27,9 +27,9 @@
 | `charge` | 電池充電畫面：全螢幕黑底，中間為動態充電電量環、電池液位與閃電圖示，顯示充電百分比與預估時間。跑滿後停頓，再重新開始 |
 | `phone` | 自動判斷：iPhone 裝置跑 `iphone`，Android 裝置跑 `android`，其他裝置隨機選一個 |
 
-- 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`update`、`iphone`、`android`、`charge` 隨機選一個（不包括 `mixed`），並重複跑該模式；手機依裝置跑 `iphone` 或 `android`。
-- 指定單一模式時，只會重複跑該模式。
-- 指定 `mixed` 才會在模式之間隨機跳。
+- 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`update` 隨機選一個（不包括 `mixed` 與手機相關模式 `iphone`、`android`、`charge`），並重複跑該模式；手機依裝置跑 `iphone` 或 `android`。
+- 指定單一模式時，只會重複跑該模式（包含手動指定 `?mode=iphone`、`?mode=android`、`?mode=charge`）。
+- 指定 `mixed` 才會在模式之間隨機跳；電腦端 `mixed` 只會在電腦模式間切換，不會跳到手機相關模式。
 - 一輪的長短依模式與速度而定：編譯、下載、日誌、套件更新約數十秒到數分鐘；安裝程式是一整串軟體；系統更新為完整的 0% → 100% → 重新啟動。
 - 模式說明也寫在 `index.html` 最上方的註解裡。
 

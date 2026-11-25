@@ -17,6 +17,7 @@
           update     系統更新（全螢幕藍底畫面）
           iphone     手機更新畫面：iPhone 風格（蘋果圖示 + 一條細進度條，沒有文字）
           android    手機更新畫面：Android 風格（小綠人 + 寬進度條 + 百分比）
+          charge     電池充電畫面：全螢幕充電動畫與電量百分比
           phone      手機更新畫面：自動判斷（iPhone 裝置 → iphone；Android 裝置 → android；其他隨機）
 
         說明：
@@ -214,9 +215,35 @@
         .tray-btn { height: 80%; border-radius: 4px; padding: 0 8px; display: flex; align-items: center; transition: background 0.1s; cursor: pointer; }
         .tray-btn:hover { background-color: var(--hover-bg); }
         .tray-group { display: flex; align-items: center; gap: 10px; padding: 0 10px; }
-        .tray-group svg { width: 18px; height: 18px; fill: white; }
+        .tray-group svg { width: 18px; height: 18px; }
+        .tray-bat-fill { transform-box: fill-box; transform-origin: left center; animation: batCharge 2.4s ease-in-out infinite; }
+        @keyframes batCharge { 0% { transform: scaleX(0.25); } 75%, 100% { transform: scaleX(1); } }
         .tray-clock { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; font-size: 12px; line-height: 1.3; padding: 0 10px; min-width: 70px; }
         .show-desktop-line { width: 4px; height: 60%; border-left: 1px solid rgba(255,255,255,0.3); margin-left: 8px; }
+
+        /* 工作列電池充電面板 */
+        #bat-flyout {
+            position: fixed; right: 12px; bottom: 56px; z-index: 9500; width: 300px;
+            background: rgba(32, 32, 32, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55); padding: 16px; color: #fff;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+        }
+        #bat-flyout[hidden] { display: none; }
+        .bf-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .bf-title { font-size: 14px; font-weight: 600; }
+        .bf-badge { font-size: 11px; color: #3DDC84; background: rgba(61, 220, 132, 0.14); border: 1px solid rgba(61, 220, 132, 0.35); padding: 2px 8px; border-radius: 999px; }
+        .bf-card { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); margin-bottom: 12px; }
+        .bf-bat-svg { width: 52px; height: 28px; flex-shrink: 0; }
+        .bf-pct { font-size: 24px; font-weight: 600; line-height: 1.1; }
+        .bf-sub { font-size: 12px; color: #b8b8b8; margin-top: 3px; }
+        .bf-meta { display: flex; justify-content: space-between; font-size: 12px; color: #ccc; padding: 0 2px 12px; }
+        .bf-btn {
+            width: 100%; padding: 8px 12px; border: 1px solid rgba(61, 220, 132, 0.45); border-radius: 6px;
+            background: rgba(61, 220, 132, 0.16); color: #fff; font: 13px 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .bf-btn:hover { background: rgba(61, 220, 132, 0.28); }
 
         /* 開始選單樣式 */
         #start-menu-panel {
@@ -319,6 +346,31 @@
         #phone.s-and #ph-fill { background: #3DDC84; border-radius: 7px; }
         #phone.s-and .ph-bar { order: 1; }
         #phone.s-and #ph-pct { order: 2; display: block; font-size: 20px; color: #ddd; margin-top: 4px; min-height: 1.3em; }
+
+        /* 全螢幕電池充電畫面 */
+        #charge {
+            position: fixed; inset: 0; height: 100dvh; z-index: 100000; background: #000; color: #fff;
+            cursor: none; touch-action: none;
+            font-family: -apple-system, 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 24px;
+        }
+        #charge[hidden] { display: none; }
+        #charge.preview { cursor: pointer; }
+        #chg-time { font-size: 40px; font-weight: 200; letter-spacing: 2px; color: rgba(255, 255, 255, 0.9); margin-bottom: 6px; }
+        .chg-ring-wrap { position: relative; width: 204px; height: 204px; display: flex; align-items: center; justify-content: center; }
+        .chg-ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); filter: drop-shadow(0 0 10px rgba(61, 220, 132, 0.45)); }
+        .chg-ring-track { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 8; }
+        .chg-ring-prog { fill: none; stroke: #3DDC84; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset .35s linear; }
+        .chg-cap { position: relative; width: 58px; height: 96px; border: 3px solid rgba(255, 255, 255, 0.85); border-radius: 12px; padding: 4px; display: flex; align-items: flex-end; background: rgba(255, 255, 255, 0.04); }
+        .chg-cap::before { content: ''; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); width: 22px; height: 5px; border-radius: 3px 3px 0 0; background: rgba(255, 255, 255, 0.85); }
+        .chg-cap-fill { width: 100%; height: 0%; border-radius: 7px; background: linear-gradient(180deg, #69f0ae 0%, #3DDC84 55%, #00c853 100%); box-shadow: 0 0 14px rgba(61, 220, 132, 0.5); transition: height .35s linear; }
+        .chg-bolt { position: absolute; inset: 0; margin: auto; width: 28px; height: 28px; filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.65)); animation: chgPulse 1.6s ease-in-out infinite; }
+        @keyframes chgPulse { 0%, 100% { transform: scale(1); opacity: .92; } 50% { transform: scale(1.12); opacity: 1; } }
+        #chg-pct { font-size: 38px; font-weight: 300; letter-spacing: 1px; margin-top: 2px; }
+        #chg-state { font-size: 16px; color: #3DDC84; font-weight: 500; }
+        #chg-sub { font-size: 13px; color: #9a9a9a; min-height: 1.3em; }
+        #chg-exit { display: none; font-size: 12px; color: #666; margin-top: 10px; }
+        #charge.preview #chg-exit { display: block; }
         html, body { overscroll-behavior: none; }
 
         /* 窄螢幕（手機）版面 */
@@ -565,10 +617,20 @@
         <div class="taskbar-right">
             <div class="tray-btn tray-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
             <div class="tray-btn" style="font-size:12px; padding: 0 4px;"><span>中</span></div>
-            <div class="tray-btn tray-group">
-                <svg viewBox="0 0 24 24"><path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z" fill="white"/></svg>
-                <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="white"/></svg>
-                <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z" fill="white"/></svg>
+            <div class="tray-btn tray-group" id="tray-group-btn" title="網路、音量與電池充電狀態">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" aria-label="Wi-Fi">
+                    <path d="M2.67 10.17A13.2 13.2 0 0 1 21.33 10.17"/>
+                    <path d="M5.64 13.14A9 9 0 0 1 18.36 13.14"/>
+                    <path d="M8.61 16.11A4.8 4.8 0 0 1 15.39 16.11"/>
+                    <circle cx="12" cy="19.5" r="1.35" fill="white" stroke="none"/>
+                </svg>
+                <svg viewBox="0 0 24 24" fill="white" aria-label="音量"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" aria-label="電池充電中">
+                    <rect x="1.5" y="6.5" width="18.5" height="11" rx="2.2" stroke="white" stroke-width="1.6"/>
+                    <path d="M21 9.8v4.4a1.2 1.2 0 0 0 0-4.4z" fill="white"/>
+                    <rect class="tray-bat-fill" x="3.5" y="8.4" width="14.5" height="7.2" rx="1" fill="#3DDC84"/>
+                    <path d="M12.3 7.3L9 12.4h2.4l-.8 4.3 3.5-5.2h-2.4l.6-4.2z" fill="#1b1b1b" stroke="white" stroke-width="0.9" stroke-linejoin="round"/>
+                </svg>
             </div>
             <div class="tray-btn tray-clock">
                 <div id="clock-time">--:--</div>
@@ -577,6 +639,30 @@
             <div class="show-desktop-line"></div>
         </div>
     </div>
+</div>
+
+<div id="bat-flyout" hidden>
+    <div class="bf-head">
+        <span class="bf-title">電源與電池</span>
+        <span class="bf-badge" id="bf-badge">⚡ 正在充電</span>
+    </div>
+    <div class="bf-card">
+        <svg class="bf-bat-svg" viewBox="0 0 52 28" fill="none">
+            <rect x="1.5" y="3" width="43" height="22" rx="4.5" stroke="rgba(255,255,255,0.85)" stroke-width="2.2"/>
+            <path d="M46.5 10v8a2.5 2.5 0 0 0 0-8z" fill="rgba(255,255,255,0.85)"/>
+            <rect id="bf-fill" x="5" y="6.5" width="36" height="15" rx="2.5" fill="#3DDC84"/>
+            <path d="M26 5.5l-6 9.5h4.5l-1.4 7.5 6.4-9.8H25l1-7.2z" fill="#fff" stroke="#181818" stroke-width="1" stroke-linejoin="round"/>
+        </svg>
+        <div>
+            <div class="bf-pct" id="bf-pct">68%</div>
+            <div class="bf-sub" id="bf-sub">已接通電源 · 預計 22 分鐘充飽</div>
+        </div>
+    </div>
+    <div class="bf-meta">
+        <span>Wi-Fi：已連線 (5 GHz)</span>
+        <span>電源模式：平衡</span>
+    </div>
+    <button class="bf-btn" id="bf-open-charge" type="button">開啟全螢幕充電畫面</button>
 </div>
 
 <div id="update" hidden>
@@ -614,6 +700,24 @@
         <div class="ph-bar"><div id="ph-fill"></div></div>
         <div id="ph-sub">請勿關閉裝置電源</div>
     </div>
+
+<div id="charge" hidden>
+    <div id="chg-time">--:--</div>
+    <div class="chg-ring-wrap">
+        <svg class="chg-ring-svg" viewBox="0 0 204 204">
+            <circle class="chg-ring-track" cx="102" cy="102" r="92"/>
+            <circle class="chg-ring-prog" id="chg-ring" cx="102" cy="102" r="92" stroke-dasharray="578.05" stroke-dashoffset="578.05"/>
+        </svg>
+        <div class="chg-cap">
+            <div class="chg-cap-fill" id="chg-cap-fill"></div>
+            <svg class="chg-bolt" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M13.5 2L4 14h6.5l-1.5 8L20 10h-6.5l0-8z"/></svg>
+        </div>
+    </div>
+    <div id="chg-pct">0%</div>
+    <div id="chg-state">⚡ 正在快速充電</div>
+    <div id="chg-sub">已接通電源</div>
+    <div id="chg-exit">點擊畫面或按 Esc 返回桌面</div>
+</div>
 
 <script>
     let zIndexCounter = 100;
@@ -1218,15 +1322,99 @@
     await sleep(id, 4000);   // 跑滿後停一下，再重新開始
   }
 
+  /* ---------- 電池充電畫面（全螢幕，跑一輪）：charge 模式 ---------- */
+  const CHG_CIRC = 2 * Math.PI * 92;
+  function renderCharge(p, clockText) {
+    const pct = Math.min(100, Math.max(0, Math.floor(p)));
+    const full = pct >= 100;
+    $('#chg-time').textContent = clockText || new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+    $('#chg-ring').style.strokeDashoffset = CHG_CIRC * (1 - pct / 100);
+    $('#chg-cap-fill').style.height = pct + '%';
+    $('#chg-pct').textContent = pct + '%';
+    $('#chg-state').textContent = full ? '✓ 已充飽電' : '⚡ 正在快速充電';
+    const mins = Math.max(1, Math.ceil((100 - pct) * 0.65));
+    $('#chg-sub').textContent = full ? '電池電量已滿 · 已切換涓流保護' : `65W 快充中 · 預計 ${mins} 分鐘後充滿`;
+  }
+
+  async function chargeScreen(id) {
+    $('#charge').classList.remove('preview');
+    let p = rand(15, 35);
+    renderCharge(p);
+    while (p < 100) {
+      p = Math.min(100, p + rand(1, 2));
+      renderCharge(p);
+      await sleep(id, p >= 85 ? rand(700, 1800) : rand(350, 1000));
+    }
+    await sleep(id, 4000);   // 充飽後停一下，再重新開始
+  }
+
+  // 工作列電池充電面板與即時充電進度
+  let batPct = 68, previewRun = 0;
+  function syncFlyout() {
+    const full = batPct >= 100;
+    $('#bf-pct').textContent = batPct + '%';
+    $('#bf-fill').style.width = Math.max(4, Math.round(36 * batPct / 100)) + 'px';
+    $('#bf-badge').textContent = full ? '✓ 已充飽' : '⚡ 正在充電';
+    const mins = Math.max(1, Math.ceil((100 - batPct) * 0.65));
+    $('#bf-sub').textContent = full ? '已接通電源 · 電量已充飽' : `已接通電源 · 預計 ${mins} 分鐘充飽`;
+  }
+  syncFlyout();
+  setInterval(() => {
+    if ($('#charge').classList.contains('preview')) return;
+    batPct = batPct >= 100 ? 45 : batPct + 1;
+    syncFlyout();
+  }, 4500);
+
+  const trayBtn = $('#tray-group-btn'), flyout = $('#bat-flyout');
+  const closePreview = () => {
+    if (!$('#charge').classList.contains('preview')) return;
+    previewRun++;
+    $('#charge').hidden = true;
+    $('#charge').classList.remove('preview');
+  };
+  if (trayBtn && flyout) {
+    trayBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      flyout.hidden = !flyout.hidden;
+      if (!flyout.hidden) syncFlyout();
+    });
+    document.addEventListener('click', e => {
+      if (!flyout.hidden && !flyout.contains(e.target) && !trayBtn.contains(e.target)) flyout.hidden = true;
+    });
+    $('#bf-open-charge').addEventListener('click', () => {
+      flyout.hidden = true;
+      $('#charge').classList.add('preview');
+      $('#charge').hidden = false;
+      const pid = ++previewRun;
+      (async () => {
+        try {
+          while (pid === previewRun && !$('#charge').hidden) {
+            renderCharge(batPct);
+            await raw(batPct >= 100 ? 3000 : 900);
+            if (pid !== previewRun || $('#charge').hidden) break;
+            batPct = batPct >= 100 ? 45 : batPct + 1;
+            syncFlyout();
+          }
+        } catch (_) {}
+      })();
+    });
+    $('#charge').addEventListener('click', closePreview);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
+  }
+
   /* ---------- 控制 ---------- */
   const RUNNERS = { compile, download, log, pkg, install };
-  const POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'iphone', 'android'];
+  const POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'iphone', 'android', 'charge'];
 
   function show(m) {
     const mobileScreen = m === 'iphone' || m === 'android';
-    const full = m === 'update' || mobileScreen;
+    const full = m === 'update' || m === 'charge' || mobileScreen;
+    previewRun++;
+    if (flyout && full) flyout.hidden = true;
+    $('#charge').classList.remove('preview');
     upd.hidden = m !== 'update';           // 系統更新：全螢幕，蓋住桌面
     $('#phone').hidden = !mobileScreen;    // 手機更新：全螢幕
+    $('#charge').hidden = m !== 'charge';  // 電池充電：全螢幕
     term.hidden = full;
     if (!full) term.replaceChildren();
   }
@@ -1239,6 +1427,7 @@
       while (true) {
         show(cur);
         if (cur === 'update') await update(id);
+        else if (cur === 'charge') await chargeScreen(id);
         else if (cur === 'iphone' || cur === 'android') await phoneUpdate(id, cur);
         else { await RUNNERS[cur](id); addLine(''); await sleep(id, rand(400, 1500)); }
         if (mixed) cur = pick(POOL.filter(m => m !== cur));

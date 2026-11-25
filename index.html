@@ -15,9 +15,13 @@
           pkg        套件更新（winget）
           install    安裝程式（連續安裝常用軟體的 GUI 視窗）
           update     系統更新（全螢幕藍底畫面）
+          phone      手機更新畫面（全螢幕黑底，兩種樣式隨機）
 
         說明：
-          - 沒有參數或參數無效時：每次進入網頁，從單一模式中隨機選一個（不包括 mixed），並重複跑該模式，直到重新整理網頁。
+          - 沒有參數或參數無效時：
+              電腦：每次進入網頁，從單一模式中隨機選一個（不包括 mixed），並重複跑該模式，直到重新整理網頁。
+              手機：預設跑 phone（手機更新畫面）。
+          - 手機點一下螢幕進入全螢幕（Android Chrome）；iPhone 請用「分享 → 加入主畫面」後從主畫面開啟。
           - 指定單一模式時，只會重複跑該模式。
           - mixed 每個模式跑完一輪後，隨機換成另一個模式，直到重新整理網頁。
           - 速度每 30 秒隨機變化一次（0.2 ~ 0.5 倍）。
@@ -29,7 +33,11 @@
         ============================================================
     -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
     <title>Windows 11 Desktop Simulation</title>
     <style>
         :root {
@@ -275,6 +283,40 @@
         .inst-foot { display: flex; justify-content: flex-end; padding: 12px 18px; background: #f3f3f3; border-top: 1px solid #e0e0e0; }
         .inst-foot button { min-width: 88px; padding: 6px 14px; font: 13px 'Segoe UI', 'Microsoft JhengHei', sans-serif; border: 1px solid #c8c8c8; border-radius: 4px; background: #fbfbfb; color: #1b1b1b; }
         .inst-foot button.done { background: #0067c0; border-color: #0067c0; color: #fff; }
+
+        /* 手機更新畫面（全螢幕） */
+        #phone {
+            position: fixed; inset: 0; height: 100dvh; z-index: 100000; background: #000; color: #fff; cursor: none; touch-action: none;
+            font-family: -apple-system, 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 24px;
+        }
+        #phone[hidden] { display: none; }
+        .ph-ring { width: 56px; height: 56px; border-radius: 50%; border: 4px solid rgba(255,255,255,.18); border-top-color: #8ab4f8; animation: sp 1s linear infinite; }
+        #ph-title { font-size: 22px; font-weight: 500; margin-top: 8px; }
+        #ph-pct { font-size: 18px; color: #bbb; min-height: 1.3em; }
+        .ph-bar { width: min(280px, 72vw); height: 4px; background: #2a2a2a; border-radius: 2px; overflow: hidden; }
+        #ph-fill { height: 100%; width: 0; background: #8ab4f8; border-radius: 2px; transition: width .3s linear; }
+        #ph-sub { font-size: 14px; color: #999; min-height: 1.4em; }
+        #phone.vb .ph-ring, #phone.vb #ph-title, #phone.vb #ph-pct { display: none; }
+        #phone.vb .ph-bar { width: 200px; height: 3px; background: #333; }
+        #phone.vb #ph-fill { background: #fff; }
+        #phone.vb #ph-sub { font-size: 13px; margin-top: 8px; }
+        #fs-hint { position: fixed; left: 0; right: 0; bottom: 18px; text-align: center; z-index: 100001; color: rgba(255,255,255,.55); font: 13px sans-serif; pointer-events: none; }
+        #fs-hint[hidden] { display: none; }
+        html, body { overscroll-behavior: none; }
+
+        /* 窄螢幕（手機）版面 */
+        @media (max-width: 700px) {
+            .sim-window { min-width: 0 !important; width: 96vw !important; max-width: 96vw !important; height: 62vh !important; max-height: 62vh !important; }
+            #term { font-size: 12px; padding: 8px 10px; }
+            #start-menu-panel { width: 94vw; height: auto; max-height: 72vh; overflow: auto; }
+            .pinned-apps, .recommended-items { grid-template-columns: repeat(4, 1fr); }
+            .inst { width: 92vw; }
+            #inst-head { font-size: 17px; }
+            .explorer-sidebar { display: none; }
+            .tray-arrow, .tray-group, .taskbar-right .tray-btn:nth-child(2), .show-desktop-line { display: none; }
+            .taskbar { padding: 0 6px; }
+        }
     </style>
 </head>
 <body>
@@ -329,7 +371,8 @@
                 
             </div>
         </div>
-        <div class="resize-handle" id="resize-handle-terminal"></div>\n    </div>
+        <div class="resize-handle" id="resize-handle-terminal"></div>
+    </div>
 
     <div class="sim-window" id="window-this-pc" style="display: none; width: 850px; height: 550px;">
         <div class="title-bar" id="title-bar-this-pc" style="background-color: var(--accent-color); color: white; cursor: grab;">
@@ -526,6 +569,15 @@
                     <div id="pct">0% 完成</div>
                     <div id="uhint">請勿關閉電腦。這需要一些時間，電腦可能會重新啟動數次。</div>
                 </div>
+
+<div id="phone" hidden>
+        <div class="ph-ring" id="ph-ring"></div>
+        <div id="ph-title">正在安裝系統更新</div>
+        <div id="ph-pct"></div>
+        <div class="ph-bar"><div id="ph-fill"></div></div>
+        <div id="ph-sub">請勿關閉裝置電源</div>
+    </div>
+    <div id="fs-hint" hidden>點一下螢幕進入全螢幕</div>
 
 <script>
     let zIndexCounter = 100;
@@ -1111,15 +1163,50 @@
     document.addEventListener('mouseup', () => { drag = false; });
   })();
 
+  /* ---------- 手機更新畫面（全螢幕，跑一輪，兩種樣式隨機） ---------- */
+  async function phoneUpdate(id) {
+    const el = $('#phone'), fill = $('#ph-fill'), title = $('#ph-title'), pct = $('#ph-pct'), sub = $('#ph-sub');
+    const vb = Math.random() < 0.4;                 // 樣式 B：只有一條細進度條
+    el.classList.toggle('vb', vb);
+    const set = p => { fill.style.width = p + '%'; pct.textContent = Math.floor(p) + '%'; };
+    fill.style.transition = 'none'; set(0);
+    await new Promise(r => requestAnimationFrame(r));
+    fill.style.transition = '';
+    title.textContent = '正在安裝系統更新';
+    let p = 0;
+    while (p < 100) {
+      const prev = p;
+      p = Math.min(100, p + rand(1, 3));
+      set(p);
+      sub.textContent = vb ? `預估剩餘時間：約 ${Math.max(1, Math.ceil((100 - p) / 9))} 分鐘` : '請勿關閉裝置電源';
+      await sleep(id, [30, 60, 90].some(x => prev < x && p >= x) ? rand(3000, 6000) : rand(300, 1400));
+    }
+    if (!vb) {
+      title.textContent = '正在最佳化應用程式';
+      const n = rand(60, 160);
+      for (let i = 1; i <= n; i++) {
+        set(i / n * 100);
+        sub.textContent = `${i} / ${n}`;
+        await sleep(id, rand(100, 420));
+      }
+    }
+    title.textContent = '正在重新啟動';
+    pct.textContent = '';
+    set(100);
+    sub.textContent = vb ? '正在重新啟動' : '請稍候...';
+    await sleep(id, 5000);
+  }
+
   /* ---------- 控制 ---------- */
   const RUNNERS = { compile, download, log, pkg, install };
-  const POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update'];
+  const POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'phone'];
 
   function show(m) {
-    const isUpd = m === 'update';
-    upd.hidden = !isUpd;       // 系統更新：全螢幕，蓋住桌面
-    term.hidden = isUpd;
-    if (!isUpd) term.replaceChildren();
+    const full = m === 'update' || m === 'phone';
+    upd.hidden = m !== 'update';           // 系統更新：全螢幕，蓋住桌面
+    $('#phone').hidden = m !== 'phone';    // 手機更新：全螢幕
+    term.hidden = full;
+    if (!full) term.replaceChildren();
   }
 
   // 單一模式：重複跑同一個模式；混合 (mixed)：每跑完一輪，隨機跳到另一個模式（不連續重複）
@@ -1130,6 +1217,7 @@
       while (true) {
         show(cur);
         if (cur === 'update') await update(id);
+        else if (cur === 'phone') await phoneUpdate(id);
         else { await RUNNERS[cur](id); addLine(''); await sleep(id, rand(400, 1500)); }
         if (mixed) cur = pick(POOL.filter(m => m !== cur));
       }
@@ -1141,9 +1229,24 @@
   pickSpeed();
   setInterval(pickSpeed, 30000);
 
-  // 網址參數 ?mode=... 指定模式；沒有參數（或參數無效）時，預設從單一模式中隨機選一個（不包括 mixed），重複跑到重新整理
+  // 手機：點一下螢幕進入全螢幕（Android Chrome 支援；iPhone Safari 不支援，請用「加入主畫面」）
+  const isMobile = /Android|iPhone|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia('(pointer: coarse)').matches && innerWidth <= 820);
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const rfs = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+  if (isMobile && !standalone && rfs) {
+    const hint = $('#fs-hint');
+    hint.hidden = false;
+    setTimeout(() => { hint.hidden = true; }, 6000);
+    document.addEventListener('click', () => {
+      hint.hidden = true;
+      try { const r = rfs.call(document.documentElement); if (r && r.catch) r.catch(() => {}); } catch (_) {}
+    }, { once: true });
+  }
+
+  // 網址參數 ?mode=... 指定模式；沒有參數（或參數無效）時：
+  //   手機 → 預設手機更新畫面 (phone)；電腦 → 從單一模式中隨機選一個（不包括 mixed），重複跑到重新整理
   const q = new URLSearchParams(location.search).get('mode');
-  loop(++run, POOL.includes(q) || q === 'mixed' ? q : pick(POOL));
+  loop(++run, POOL.includes(q) || q === 'mixed' ? q : (isMobile ? 'phone' : pick(POOL)));
 })();
 </script>
 </body>

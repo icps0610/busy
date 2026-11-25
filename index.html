@@ -38,6 +38,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <title>Windows 11 Desktop Simulation</title>
     <style>
         :root {
@@ -1234,6 +1236,9 @@
   const pickSpeed = () => { speed = +(0.2 + Math.random() * 0.3).toFixed(2); };
   pickSpeed();
   setInterval(pickSpeed, 30000);
+
+  // 讓瀏覽器可以「安裝」成 App（Android：加到主畫面後以獨立視窗開啟，沒有網址列與全螢幕提示）
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
   // 手機：點一下螢幕進入全螢幕（Android Chrome 支援；iPhone Safari 不支援，請用「加入主畫面」）
   const isMobile = /Android|iPhone|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia('(pointer: coarse)').matches && innerWidth <= 820);

@@ -15,7 +15,7 @@
           pkg        套件更新（winget）
           install    安裝程式（連續安裝常用軟體的 GUI 視窗）
           update     系統更新（全螢幕藍底畫面）
-          phone      手機更新畫面（全螢幕黑底，兩種樣式隨機）
+          phone      手機更新畫面（全螢幕黑底；iPhone 為細進度條樣式，Android 為轉圈樣式，其他裝置隨機）
 
         說明：
           - 沒有參數或參數無效時：
@@ -291,7 +291,11 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 24px;
         }
         #phone[hidden] { display: none; }
-        .ph-ring { width: 56px; height: 56px; border-radius: 50%; border: 4px solid rgba(255,255,255,.18); border-top-color: #8ab4f8; animation: sp 1s linear infinite; }
+        #ph-top { position: relative; width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; }
+        .ph-ring { position: absolute; inset: 0; border-radius: 50%; border: 4px solid rgba(255,255,255,.18); border-top-color: #8ab4f8; animation: sp 1s linear infinite; }
+        .ph-icon { width: 34px; height: 34px; opacity: .9; }
+        #phone.vb #ph-top { width: 56px; height: 56px; margin-bottom: 6px; }
+        #phone.vb .ph-icon { width: 56px; height: 56px; opacity: .95; }
         #ph-title { font-size: 22px; font-weight: 500; margin-top: 8px; }
         #ph-pct { font-size: 18px; color: #bbb; min-height: 1.3em; }
         .ph-bar { width: min(280px, 72vw); height: 4px; background: #2a2a2a; border-radius: 2px; overflow: hidden; }
@@ -571,7 +575,10 @@
                 </div>
 
 <div id="phone" hidden>
-        <div class="ph-ring" id="ph-ring"></div>
+        <div id="ph-top">
+            <div class="ph-ring" id="ph-ring"></div>
+            <svg class="ph-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.8"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/></svg>
+        </div>
         <div id="ph-title">正在安裝系統更新</div>
         <div id="ph-pct"></div>
         <div class="ph-bar"><div id="ph-fill"></div></div>
@@ -1166,7 +1173,9 @@
   /* ---------- 手機更新畫面（全螢幕，跑一輪，兩種樣式隨機） ---------- */
   async function phoneUpdate(id) {
     const el = $('#phone'), fill = $('#ph-fill'), title = $('#ph-title'), pct = $('#ph-pct'), sub = $('#ph-sub');
-    const vb = Math.random() < 0.4;                 // 樣式 B：只有一條細進度條
+    // iPhone → 樣式 B（一條細進度條）；Android → 樣式 A（轉圈 + 最佳化應用程式）；其他裝置隨機
+    const ua = navigator.userAgent;
+    const vb = /iPhone|iPod|iPad/i.test(ua) ? true : /Android/i.test(ua) ? false : Math.random() < 0.4;
     el.classList.toggle('vb', vb);
     const set = p => { fill.style.width = p + '%'; pct.textContent = Math.floor(p) + '%'; };
     fill.style.transition = 'none'; set(0);

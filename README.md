@@ -22,7 +22,7 @@
 | `pkg` | 套件更新：winget upgrade 風格 |
 | `install` | 安裝程式：桌面跳出安裝視窗，連續安裝 4～6 個常用軟體（Chrome、Firefox、LINE、Microsoft 365、7-Zip、Notepad++、Acrobat Reader、Zoom、VLC、VS Code、Teams 隨機抽），終端機同步跑安裝日誌 |
 | `update` | 系統更新：全螢幕藍底畫面，0% → 100% → 重新啟動，循環 |
-| `phone` | 手機更新畫面：全螢幕黑底，兩種樣式隨機（A：轉圈 + 「正在安裝系統更新」百分比，之後「正在最佳化應用程式 N / M」；B：只有一條細進度條與預估剩餘時間），最後「正在重新啟動」，循環 |
+| `phone` | 手機更新畫面：全螢幕黑底，中間是通用齒輪圖示（沒有使用 Android 或 Apple 的標誌）。**iPhone** 為樣式 B：一條細進度條與預估剩餘時間；**Android** 為樣式 A：轉圈、「正在安裝系統更新」百分比，之後「正在最佳化應用程式 N / M」；其他裝置隨機選一種。最後「正在重新啟動」，循環 |
 
 - 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`update`、`phone` 隨機選一個（不包括 `mixed`），並重複跑該模式；手機預設為 `phone`。
 - 指定單一模式時，只會重複跑該模式。

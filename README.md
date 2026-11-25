@@ -7,7 +7,7 @@
 ## 使用方式
 
 - 直接開啟 `index.html`：
-  - **電腦**：每次進入網頁，從電腦模式中**隨機選一個**（不包括混合與手機相關模式），並重複跑該模式，直到重新整理網頁。
+  - **電腦**：預設跑**多視窗**（`multi`）：同時開 2～4 個終端機視窗，各跑一個畫面並一直循環。想要「隨機選一個單一模式並重複跑」請用 `?mode=random`。
   - **手機**：預設跑**手機更新畫面**（`phone`）。
 - 或用網址參數指定模式，例如 `index.html?mode=install`。
 
@@ -16,6 +16,8 @@
 | `?mode=` | 說明 |
 | --- | --- |
 | `mixed` | **混合**：一直隨機跳，每跑完一輪，隨機換成另一個模式（不連續重複），直到重新整理網頁 |
+| `random` | **隨機單一**：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`aircrack`、`hashcat`、`update` 隨機選一個，並一直重複跑該模式，直到重新整理網頁（這是舊的預設行為）；手機跑手機更新畫面 |
+| `multi` | 多視窗（**電腦的預設**）：同時開 **2～4 個**
 | `compile` | 編譯：cargo build 或 cmake，帶進度條與警告 |
 | `download` | 下載：多檔同時下載，顯示進度條、速度、ETA |
 | `log` | 伺服器日誌：INFO、DEBUG、WARN、ERROR 分色 |
@@ -23,13 +25,14 @@
 | `install` | 安裝程式：桌面跳出安裝視窗，連續安裝 4～6 個常用軟體（Chrome、Firefox、LINE、Microsoft 365、7-Zip、Notepad++、Acrobat Reader、Zoom、VLC、VS Code、Teams 隨機抽），終端機同步跑安裝日誌 |
 | `aircrack` | 密碼比對：aircrack 風格的畫面（目標網路列表、已測試金鑰數與速度、剩餘時間、目前比對的密碼、跳動的金鑰十六進位值）。單獨執行時**永遠跑不完**，密碼欄一直跳隨機字元；在 `mixed` 中每輪最長 10 分鐘（或在某個進度顯示綠色的「KEY FOUND!」）。**純視覺模擬**，不會做任何實際的事 |
 | `hashcat` | 密碼破解：hashcat 風格的狀態畫面（啟動訊息、Speed、Progress、Time.Estimated、Candidates、Hardware.Mon）。單獨執行時用 8 位任意字元的遮罩攻擊，**永遠跑不完**，候選密碼一直跳隨機字元；在 `mixed` 中改為字典攻擊，每輪最長 10 分鐘（或在某個進度顯示綠色的「Status: Cracked」）。每輪隨機選 WPA / bcrypt / sha512crypt 其中一種。**純視覺模擬**，不會做任何實際的事 |
+終端機視窗，排成不重疊的格子（格子位置隨機，字體依大小自動縮小），每個視窗各跑一個隨機的終端機畫面（`compile`、`download`、`log`、`pkg`、`aircrack`、`hashcat` 中不重複挑選），並一直循環；視窗可拖曳、縮放。在 `mixed` 中最長 10 分鐘 |
 | `update` | 系統更新：全螢幕藍底畫面，0% → 100% → 重新啟動，循環 |
 | `iphone` | 手機更新畫面（iPhone 風格）：全螢幕黑底，中間為白色蘋果圖示，下方一條細白色進度條，沒有文字。跑滿後停頓，再重新開始 |
 | `android` | 手機更新畫面（Android 風格）：全螢幕黑底，中間為會轉動齒輪的 Android 小綠人，下方是寬圓角綠色進度條與百分比。跑滿後停頓，再重新開始 |
 | `charge` | 電池充電畫面：全螢幕黑底，中間為動態充電電量環、電池液位與閃電圖示，顯示充電百分比與預估時間。跑滿後停頓，再重新開始 |
 | `phone` | 自動判斷：iPhone 裝置跑 `iphone`，Android 裝置跑 `android`，其他裝置隨機選一個 |
 
-- 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`aircrack`、`hashcat`、`update` 隨機選一個（不包括 `mixed` 與手機相關模式 `iphone`、`android`、`charge`），並重複跑該模式；手機依裝置跑 `iphone` 或 `android`。
+- 沒有參數或參數無效時：電腦跑 `multi`（多視窗）；手機依裝置跑 `iphone` 或 `android`。`random` 與 `mixed` 都不會自動套用，需用 `?mode=` 指定。
 - 指定單一模式時，只會重複跑該模式（包含手動指定 `?mode=iphone`、`?mode=android`、`?mode=charge`）。
 - 指定 `mixed` 才會在模式之間隨機跳；電腦端 `mixed` 只會在電腦模式間切換，不會跳到手機相關模式。
 - 一輪的長短依模式與速度而定：編譯、下載、日誌、套件更新約數十秒到數分鐘；安裝程式是一整串軟體；系統更新為完整的 0% → 100% → 重新啟動。

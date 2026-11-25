@@ -5,10 +5,11 @@
         ============================================================
         網址參數說明
         ------------------------------------------------------------
-        ?mode=模式名稱    指定要跑的模式（沒有參數時，預設為隨機選一個單一模式，不包括 mixed）
+        ?mode=模式名稱    指定要跑的模式（沒有參數時，電腦預設為 multi 多視窗）
 
         mode 可用值：
           mixed      混合：一直隨機跳（每跑完一輪，隨機換成另一個模式，直到重新整理）
+          random     隨機單一：從電腦的單一畫面模式（不含 multi）隨機選一個，並一直重複跑該模式，直到重新整理（手機：跑手機更新畫面）
           compile    編譯（cargo / cmake）
           download   下載（多檔同時下載）
           log        伺服器日誌
@@ -17,6 +18,7 @@
           aircrack   密碼比對（aircrack 風格的畫面，純視覺模擬，不會做任何實際的事）
           hashcat    密碼破解（hashcat 風格的狀態畫面，純視覺模擬，不會做任何實際的事）
                      ※ aircrack / hashcat 單獨跑時永遠不會結束（密碼欄一直跳隨機字元）；在 mixed 中每輪最長 10 分鐘
+          multi      多視窗：同時開 2~4 個終端機視窗（排成不重疊的格子，位置隨機），各跑一個隨機的終端機畫面並一直循環（電腦的預設；在 mixed 中最長 10 分鐘）
           update     系統更新（全螢幕藍底畫面）
           iphone     手機更新畫面：iPhone 風格（蘋果圖示 + 一條細進度條，沒有文字）
           android    手機更新畫面：Android 風格（小綠人 + 寬進度條 + 百分比）
@@ -25,7 +27,7 @@
 
         說明：
           - 沒有參數或參數無效時：
-              電腦：每次進入網頁，從電腦模式（compile / download / log / pkg / install / aircrack / hashcat / update）中隨機選一個，並重複跑該模式，直到重新整理網頁（不會隨機到 iphone / android / charge）。
+              電腦：預設跑 multi（多視窗）；想要「隨機選一個單一模式並重複跑」請用 ?mode=random（從 compile / download / log / pkg / install / aircrack / hashcat / update 中選一個）。
               手機：iPhone 預設跑 iphone，Android 預設跑 android（其他手機隨機）。
           - 手機點一下螢幕進入全螢幕（Android Chrome）；iPhone 請用「分享 → 加入主畫面」後從主畫面開啟。
           - 指定單一模式時，只會重複跑該模式。
@@ -33,7 +35,8 @@
           - 速度每 30 秒隨機變化一次（0.2 ~ 0.5 倍）。
 
         範例：
-          index.html                 隨機選一個單一模式並重複跑（預設）
+          index.html                 多視窗（預設）
+          index.html?mode=random     隨機選一個單一模式並重複跑
           index.html?mode=mixed      混合（全部隨機跳）
           index.html?mode=install    只跑安裝程式
         ============================================================
@@ -147,15 +150,17 @@
         /* 終端機特有 */
         .terminal-content { flex: 1; min-height: 0; display: flex; background-color: #0c0c0c; }
         #stage { flex: 1; min-width: 0; position: relative; }
-        #term {
+        #term, .term-x {
             position: absolute; inset: 0; padding: 10px 14px; display: block;
             overflow-y: auto; overflow-x: hidden; color: #cccccc;
             font: 17px/1.4 Consolas, 'Cascadia Mono', 'Courier New', monospace;
             scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.22) transparent;
         }
-        #term::-webkit-scrollbar { width: 8px; }
-        #term::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 4px; }
-        #term::-webkit-scrollbar-track { background: transparent; }
+        #term::-webkit-scrollbar, .term-x::-webkit-scrollbar { width: 8px; }
+        #term::-webkit-scrollbar-thumb, .term-x::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 4px; }
+        #term::-webkit-scrollbar-track, .term-x::-webkit-scrollbar-track { background: transparent; }
+        /* multi 模式：多個終端機視窗同時播放，字體縮小 */
+        #term.small, .term-x { font-size: 12px; padding: 8px 10px; }
         #term[hidden], #update[hidden] { display: none; }
         .ln { white-space: pre; min-height: 1.4em; }
         .ln.cmd { color: #f9f1a5; } .ln.dim { color: #767676; } .ln.warn { color: #f9f1a5; }
@@ -1028,7 +1033,9 @@
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  const term = $('#term'), upd = $('#update');
+  // term / tok 是「目前正在輸出的終端機」；multi 模式有多個終端機同時執行，sleep() 會在每次醒來時還原自己的 term / tok
+  let term = $('#term'), tok = { dead: false };
+  const upd = $('#update');
   const CANCEL = Symbol('cancel');
   const PS = 'PS C:\\Users\\Administrator> ';
   const MODES = ['mixed', 'compile', 'download', 'log', 'pkg', 'update'];
@@ -1041,9 +1048,11 @@
   const raw = ms => new Promise(r => setTimeout(r, ms));
 
   async function sleep(id, ms) {
+    const myTerm = term, myTok = tok;
     await raw(ms / speed);
     while (paused && id === run) await raw(100);
-    if (id !== run) throw CANCEL;
+    term = myTerm; tok = myTok;
+    if (id !== run || myTok.dead) throw CANCEL;
   }
 
   function addLine(text = '', cls = '', before = null) {
@@ -1617,9 +1626,87 @@
     await sleep(id, 6000);
   }
 
+  /* ---------- multi：同時開 2~4 個終端機視窗，各跑一個畫面（隨機位置），一直循環 ---------- */
+  const TERM_MODES = ['compile', 'download', 'log', 'pkg', 'aircrack', 'hashcat'];
+
+  function makeExtraWindow(nid) {
+    const src = $('#terminal-window');
+    const w = src.cloneNode(true);
+    const t = w.querySelector('#term'), stage = w.querySelector('#stage');
+    t.className = 'term-x'; t.replaceChildren();
+    stage.style.cssText = 'flex:1;min-width:0;position:relative';
+    w.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+    w.querySelectorAll('[onclick]').forEach(e => e.setAttribute('onclick', e.getAttribute('onclick').replace('terminal-window', nid)));
+    w.id = nid;
+    w.classList.remove('maximized');
+    src.parentNode.appendChild(w);
+    makeDraggable(w, w.querySelector('.title-bar'));
+    makeResizable(w, w.querySelector('.resize-handle'));
+    w.addEventListener('mousedown', () => { w.style.zIndex = ++zIndexCounter; });
+    w.querySelector('.title-bar').addEventListener('dblclick', e => { if (!e.target.closest('.window-controls')) toggleMaximize(nid); });
+    return { win: w, term: t };
+  }
+
+  // 把 n 個視窗排成不重疊的格子（隨機挑格子），再依格子大小自動縮小字體，讓內容放得下
+  function layoutCells(n) {
+    const W = innerWidth, H = innerHeight - 48, g = 6;
+    let cols, rows;
+    if (n === 2) { [cols, rows] = Math.random() < 0.5 ? [2, 1] : [1, 2]; } else { cols = 2; rows = 2; }
+    const cw = Math.floor(W / cols), ch = Math.floor(H / rows);
+    const cells = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ left: c * cw + g, top: r * ch + g, width: cw - 2 * g, height: ch - 2 * g });
+    const chosen = cells.sort(() => Math.random() - 0.5).slice(0, n);
+    // 畫面最高約 19 列、最寬約 84 個字元：以此估算字體大小（單位 px），範圍 8 ~ 12
+    const fs = chosen.map(c => Math.max(8, Math.min(12, Math.floor((c.height - 56) / 19 / 1.4), Math.floor((c.width - 24) / (84 * 0.55)))));
+    return chosen.map((c, i) => Object.assign(c, { fs: fs[i] }));
+  }
+
+  function placeWindow(w, cell) {
+    w.style.cssText = `width:${cell.width}px;height:${cell.height}px;min-width:0;min-height:0;left:${cell.left}px;top:${cell.top}px;transform:none;z-index:${++zIndexCounter}`;
+  }
+
+  async function multi(id) {
+    const n = rand(2, 4);
+    const modes = [...TERM_MODES].sort(() => Math.random() - 0.5).slice(0, n);
+    const mainWin = $('#terminal-window'), mainTerm = $('#term'), baseTok = tok;
+    const saved = { css: mainWin.style.cssText, max: mainWin.classList.contains('maximized') };
+    mainWin.classList.remove('maximized');
+    const cells = layoutCells(n);
+    placeWindow(mainWin, cells[0]);
+    mainTerm.classList.add('small');
+    mainTerm.style.fontSize = cells[0].fs + 'px';
+    mainTerm.replaceChildren();
+    const slots = [{ win: mainWin, term: mainTerm }];
+    for (let i = 1; i < n; i++) { const sl = makeExtraWindow('term-extra-' + i); placeWindow(sl.win, cells[i]); sl.term.style.fontSize = cells[i].fs + 'px'; slots.push(sl); }
+    const toks = slots.map(() => ({ dead: false }));
+    slots.forEach((sl, i) => {
+      sl.win.style.display = 'flex';
+      term = sl.term; tok = toks[i];
+      (async () => {
+        try {
+          while (true) { await RUNNERS[modes[i]](id); addLine(''); await sleep(id, rand(400, 1500)); }
+        } catch (e) { if (e !== CANCEL) console.error('[錯誤]', e); }
+      })();
+    });
+    term = mainTerm; tok = baseTok;
+    try {
+      // 單獨執行：永遠不結束；混合模式：最長 10 分鐘
+      await new Promise(r => { if (mixedRun) setTimeout(r, MIX_LIMIT); });
+    } finally {
+      toks.forEach(t => { t.dead = true; });
+      slots.slice(1).forEach(sl => sl.win.remove());
+      mainTerm.classList.remove('small');
+      mainTerm.style.fontSize = '';
+      mainTerm.replaceChildren();
+      mainWin.style.cssText = saved.css;
+      if (saved.max) mainWin.classList.add('maximized');
+      term = mainTerm; tok = baseTok;
+    }
+  }
+
   /* ---------- 控制 ---------- */
   const RUNNERS = { compile, download, log, pkg, install, aircrack, hashcat };
-  const DESKTOP_POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'aircrack', 'hashcat'];
+  const DESKTOP_POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'aircrack', 'hashcat', 'multi'];
   const MOBILE_POOL = ['iphone', 'android', 'charge'];
   const ALL_MODES = [...DESKTOP_POOL, ...MOBILE_POOL];
   const isMobile = /Android|iPhone|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia('(pointer: coarse)').matches && innerWidth <= 820);
@@ -1642,12 +1729,13 @@
   async function loop(id, startMode) {
     const mixed = startMode === 'mixed';
     mixedRun = mixed;
-    const pool = isMobile ? ALL_MODES : DESKTOP_POOL;
+    const pool = isMobile ? ALL_MODES.filter(m => m !== 'multi') : DESKTOP_POOL;
     let cur = mixed ? pick(pool) : startMode;
     try {
       while (true) {
         show(cur);
         if (cur === 'update') await update(id);
+        else if (cur === 'multi') { await multi(id); await sleep(id, 300); }
         else if (cur === 'charge') await chargeScreen(id);
         else if (cur === 'iphone' || cur === 'android') await phoneUpdate(id, cur);
         else { await RUNNERS[cur](id); addLine(''); await sleep(id, rand(400, 1500)); }
@@ -1694,12 +1782,17 @@
   }
 
   // 網址參數 ?mode=... 指定模式；沒有參數（或參數無效）時：
-  //   手機 → iPhone 跑 iphone、Android 跑 android（其他手機隨機）；電腦 → 從 DESKTOP_POOL 隨機選一個（不含 mixed 與手機相關模式）
+  //   手機 → iPhone 跑 iphone、Android 跑 android（其他手機隨機）；電腦 → multi（多視窗）
+  //   ?mode=random：電腦從 SINGLE_POOL 隨機選一個單一模式，並一直重複跑（舊的預設行為）
   //   ?mode=phone 為自動：依裝置判斷 iphone / android，無法判斷時隨機
   const ua = navigator.userAgent;
   const phoneMode = /iPhone|iPod|iPad/i.test(ua) ? 'iphone' : /Android/i.test(ua) ? 'android' : pick(['iphone', 'android']);
   const q = new URLSearchParams(location.search).get('mode');
-  const start = q === 'phone' ? phoneMode : ALL_MODES.includes(q) || q === 'mixed' ? q : (isMobile ? phoneMode : pick(DESKTOP_POOL));
+  const SINGLE_POOL = DESKTOP_POOL.filter(m => m !== 'multi');   // random 模式用：單一畫面（不含 multi）
+  const start = q === 'phone' ? phoneMode
+    : q === 'random' ? (isMobile ? phoneMode : pick(SINGLE_POOL))
+    : ALL_MODES.includes(q) || q === 'mixed' ? q
+    : (isMobile ? phoneMode : 'multi');
   loop(++run, start);
 })();
 </script>

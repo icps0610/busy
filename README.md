@@ -22,9 +22,11 @@
 | `pkg` | 套件更新：winget upgrade 風格 |
 | `install` | 安裝程式：桌面跳出安裝視窗，連續安裝 4～6 個常用軟體（Chrome、Firefox、LINE、Microsoft 365、7-Zip、Notepad++、Acrobat Reader、Zoom、VLC、VS Code、Teams 隨機抽），終端機同步跑安裝日誌 |
 | `update` | 系統更新：全螢幕藍底畫面，0% → 100% → 重新啟動，循環 |
-| `phone` | 手機更新畫面：全螢幕黑底，中間是通用齒輪圖示（沒有使用 Android 或 Apple 的標誌）。**iPhone** 為樣式 B：一條細進度條與預估剩餘時間；**Android** 為樣式 A：轉圈、「正在安裝系統更新」百分比，之後「正在最佳化應用程式 N / M」；其他裝置隨機選一種。最後「正在重新啟動」，循環 |
+| `iphone` | 手機更新畫面（iPhone 風格）：全螢幕黑底，中間為白色蘋果圖示，下方一條細白色進度條，沒有文字。跑滿後停頓，再重新開始 |
+| `android` | 手機更新畫面（Android 風格）：全螢幕黑底，中間為會轉動齒輪的 Android 小綠人，下方是寬圓角綠色進度條與百分比。跑滿後停頓，再重新開始 |
+| `phone` | 自動判斷：iPhone 裝置跑 `iphone`，Android 裝置跑 `android`，其他裝置隨機選一個 |
 
-- 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`update`、`phone` 隨機選一個（不包括 `mixed`），並重複跑該模式；手機預設為 `phone`。
+- 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`update`、`iphone`、`android` 隨機選一個（不包括 `mixed`），並重複跑該模式；手機依裝置跑 `iphone` 或 `android`。
 - 指定單一模式時，只會重複跑該模式。
 - 指定 `mixed` 才會在模式之間隨機跳。
 - 一輪的長短依模式與速度而定：編譯、下載、日誌、套件更新約數十秒到數分鐘；安裝程式是一整串軟體；系統更新為完整的 0% → 100% → 重新啟動。
@@ -32,7 +34,8 @@
 
 ## 手機
 
-- 手機開啟時預設為手機更新畫面。
+- 手機開啟時預設為手機更新畫面：iPhone 跑 `iphone`，Android 跑 `android`。
+- `iphone` 模式使用白色蘋果圖示；`android` 模式使用 Android 小綠人圖示。
 - **Android（Chrome）**：點一下螢幕進入全螢幕（沒有任何提示文字，第一次點擊時才會進入）。
 - **Android 免提示的做法**：全螢幕時 Android 系統會自己跳出「從頂端向下拖曳…即可退出全螢幕模式」的提示，網頁無法移除。改在 Chrome 選「加到主畫面」或「安裝應用程式」，再從桌面圖示開啟，就是獨立視窗（沒有網址列、沒有這個提示），只保留系統狀態列。需要透過 HTTPS（例如 GitHub Pages）開啟。
 - **iPhone（Safari）**：網頁無法全螢幕。請用「分享 → 加入主畫面」，再從主畫面圖示開啟，就不會有網址列與工具列。
@@ -57,16 +60,14 @@
 
 ```
 busy/
-├─ index.html
-├─ manifest.json     App 資訊（名稱、顏色、圖示）
-├─ sw.js             最小 Service Worker（網路優先，離線時用快取）
-├─ icons/
-│  ├─ icon-192.png
-│  └─ icon-512.png
+├─ index.html   主程式（App 的 manifest 與圖示都內建在這個檔案裡）
+├─ sw.js        最小 Service Worker（網路優先，離線時用快取）
 └─ README.md
 ```
 
-- 桌面圖示上的 App 名稱可在 `manifest.json` 的 `name`、`short_name` 修改。
+- `manifest` 與圖示由 `index.html` 在執行時產生，不需要 `manifest.json` 和圖片檔。
+- `sw.js` 無法內建（瀏覽器規定 Service Worker 必須是獨立檔案），它只用來讓瀏覽器把網頁視為可安裝的 App；沒有它，網頁本身仍可正常使用。
+- 桌面上顯示的 App 名稱可在 `index.html` 搜尋 `short_name` 修改。
 - 更新 `index.html` 後，已安裝的 App 會在連網時自動取得新版（網路優先）。
 
 ## 注意事項

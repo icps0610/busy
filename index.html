@@ -15,12 +15,14 @@
           pkg        套件更新（winget）
           install    安裝程式（連續安裝常用軟體的 GUI 視窗）
           update     系統更新（全螢幕藍底畫面）
-          phone      手機更新畫面（全螢幕黑底；iPhone 為細進度條樣式，Android 為轉圈樣式，其他裝置隨機）
+          iphone     手機更新畫面：iPhone 風格（蘋果圖示 + 一條細進度條，沒有文字）
+          android    手機更新畫面：Android 風格（小綠人 + 寬進度條 + 百分比）
+          phone      手機更新畫面：自動判斷（iPhone 裝置 → iphone；Android 裝置 → android；其他隨機）
 
         說明：
           - 沒有參數或參數無效時：
               電腦：每次進入網頁，從單一模式中隨機選一個（不包括 mixed），並重複跑該模式，直到重新整理網頁。
-              手機：預設跑 phone（手機更新畫面）。
+              手機：iPhone 預設跑 iphone，Android 預設跑 android（其他手機隨機）。
           - 手機點一下螢幕進入全螢幕（Android Chrome）；iPhone 請用「分享 → 加入主畫面」後從主畫面開啟。
           - 指定單一模式時，只會重複跑該模式。
           - mixed 每個模式跑完一輪後，隨機換成另一個模式，直到重新整理網頁。
@@ -38,8 +40,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADAAQMAAABoEv5EAAAABlBMVEX///8AAABVwtN+AAAB20lEQVR42u2WP27bMBTGf5KVSkMACciSTTpCb2D1Jj2Kxo49UAf3Bh27lUAvwBZFygC0XwZSjEzSsLIYGaRFlj993/v/qELIXyUbsAEbsAE3Av6M79GrRr0Xrwq/qW11gfE0/3GYf4i7lL9L7+8zQ03+PR1JDV7iZCKgU/C9AttENkwrFvaiYxuV4R/8QA+RVGn5Cn9RYyQltQDIJJEUX44A4ydixi8D0P+enwMgCqD+n0ihYBnGK3AAOCVph8KZTBgCvYEp8cqCCOxT4+wWVVowDK2Ipk8Yhg4adKZLPsOHjJRCRIQ6kVIFwGTf0IklwJgChwpgOF2VCl7RiohoMim5ZLwDaNYPTijQlDAGgGqt1LEYrw7n/M4tFoBzfJcmLV4I7CSWct2eqUfv2u4N9dCuH9fHMRkAXaxnjBZAlSnjdLbfVjTcxTHomEAWjTW/oen9IEaMBu0HMTJeuQ03ZLw6LueGZUDD8wK6vmRcNxeZyMfMrAJ+4Wa6/ecjwGO6AL65cX5KUuLcez1HwqiVTFCEcyQwbC0aWlH7iGEb7uEjnYoYuhc57ERMG63wWcLWkVQ3hnPkPInP9Vwwcx7gXThH4gDDOXIWsC/hg94+1VZ8l2wp2YAN2IDbAi+ZGLLaCTcYFAAAAABJRU5ErkJggg==">
+    <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADAAQMAAABoEv5EAAAABlBMVEX///8AAABVwtN+AAAB20lEQVR42u2WP27bMBTGf5KVSkMACciSTTpCb2D1Jj2Kxo49UAf3Bh27lUAvwBZFygC0XwZSjEzSsLIYGaRFlj993/v/qELIXyUbsAEbsAE3Av6M79GrRr0Xrwq/qW11gfE0/3GYf4i7lL9L7+8zQ03+PR1JDV7iZCKgU/C9AttENkwrFvaiYxuV4R/8QA+RVGn5Cn9RYyQltQDIJJEUX44A4ydixi8D0P+enwMgCqD+n0ihYBnGK3AAOCVph8KZTBgCvYEp8cqCCOxT4+wWVVowDK2Ipk8Yhg4adKZLPsOHjJRCRIQ6kVIFwGTf0IklwJgChwpgOF2VCl7RiohoMim5ZLwDaNYPTijQlDAGgGqt1LEYrw7n/M4tFoBzfJcmLV4I7CSWct2eqUfv2u4N9dCuH9fHMRkAXaxnjBZAlSnjdLbfVjTcxTHomEAWjTW/oen9IEaMBu0HMTJeuQ03ZLw6LueGZUDD8wK6vmRcNxeZyMfMrAJ+4Wa6/ecjwGO6AL65cX5KUuLcez1HwqiVTFCEcyQwbC0aWlH7iGEb7uEjnYoYuhc57ERMG63wWcLWkVQ3hnPkPInP9Vwwcx7gXThH4gDDOXIWsC/hg94+1VZ8l2wp2YAN2IDbAi+ZGLLaCTcYFAAAAABJRU5ErkJggg==">
     <title>Windows 11 Desktop Simulation</title>
     <style>
         :root {
@@ -296,17 +298,27 @@
         #ph-top { position: relative; width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; }
         .ph-ring { position: absolute; inset: 0; border-radius: 50%; border: 4px solid rgba(255,255,255,.18); border-top-color: #8ab4f8; animation: sp 1s linear infinite; }
         .ph-icon { width: 34px; height: 34px; opacity: .9; }
+        .ph-android, .ph-apple { display: none; }
+        .ph-and-gear { transform-box: view-box; transform-origin: 60px 76.5px; animation: sp 3.5s linear infinite; }
         #phone.vb #ph-top { width: 56px; height: 56px; margin-bottom: 6px; }
         #phone.vb .ph-icon { width: 56px; height: 56px; opacity: .95; }
-        #ph-title { font-size: 22px; font-weight: 500; margin-top: 8px; }
-        #ph-pct { font-size: 18px; color: #bbb; min-height: 1.3em; }
-        .ph-bar { width: min(280px, 72vw); height: 4px; background: #2a2a2a; border-radius: 2px; overflow: hidden; }
-        #ph-fill { height: 100%; width: 0; background: #8ab4f8; border-radius: 2px; transition: width .3s linear; }
-        #ph-sub { font-size: 14px; color: #999; min-height: 1.4em; }
-        #phone.vb .ph-ring, #phone.vb #ph-title, #phone.vb #ph-pct { display: none; }
-        #phone.vb .ph-bar { width: 200px; height: 3px; background: #333; }
-        #phone.vb #ph-fill { background: #fff; }
-        #phone.vb #ph-sub { font-size: 13px; margin-top: 8px; }
+        #ph-title, #ph-pct, #ph-sub { display: none; }
+        .ph-bar { background: #2a2a2a; overflow: hidden; }
+        #ph-fill { height: 100%; width: 0; transition: width .3s linear; }
+        /* iPhone 風格：白色蘋果圖示 + 一條細進度條，沒有文字 */
+        #phone.s-ios .ph-ring, #phone.s-ios .ph-icon { display: none; }
+        #phone.s-ios .ph-apple { display: block; width: 64px; height: 64px; }
+        #phone.s-ios #ph-top { width: 64px; height: 64px; margin-bottom: 34px; }
+        #phone.s-ios .ph-bar { width: min(260px, 66vw); height: 3px; background: #444; border-radius: 2px; }
+        #phone.s-ios #ph-fill { background: #fff; border-radius: 2px; }
+        /* Android 風格：小綠人 + 寬圓角綠色進度條 + 百分比 */
+        #phone.s-and .ph-ring, #phone.s-and .ph-icon { display: none; }
+        #phone.s-and .ph-android { display: block; width: 120px; height: 132px; }
+        #phone.s-and #ph-top { width: 120px; height: 132px; margin-bottom: 28px; }
+        #phone.s-and .ph-bar { width: min(380px, 86vw); height: 14px; background: #161616; border-radius: 7px; }
+        #phone.s-and #ph-fill { background: #3DDC84; border-radius: 7px; }
+        #phone.s-and .ph-bar { order: 1; }
+        #phone.s-and #ph-pct { order: 2; display: block; font-size: 20px; color: #ddd; margin-top: 4px; min-height: 1.3em; }
         html, body { overscroll-behavior: none; }
 
         /* 窄螢幕（手機）版面 */
@@ -578,6 +590,24 @@
         <div id="ph-top">
             <div class="ph-ring" id="ph-ring"></div>
             <svg class="ph-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.8"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/></svg>
+            <svg class="ph-apple" viewBox="0 0 384 512" fill="#fff" aria-label="Apple"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+            <svg class="ph-android" viewBox="0 0 120 132" aria-label="Android">
+                <line x1="41" y1="11" x2="49" y2="25" stroke="#3DDC84" stroke-width="4" stroke-linecap="round"/>
+                <line x1="79" y1="11" x2="71" y2="25" stroke="#3DDC84" stroke-width="4" stroke-linecap="round"/>
+                <path d="M30 48 A30 27 0 0 1 90 48 Z" fill="#3DDC84"/>
+                <circle cx="47" cy="36" r="3" fill="#000"/>
+                <circle cx="73" cy="36" r="3" fill="#000"/>
+                <path d="M30 52 H90 V94 A7 7 0 0 1 83 101 H37 A7 7 0 0 1 30 94 Z" fill="#3DDC84"/>
+                <g class="ph-and-gear" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round">
+                    <circle cx="60" cy="76.5" r="7.5"/>
+                    <circle cx="60" cy="76.5" r="2.6" fill="#000" stroke="none"/>
+                    <path d="M60 64.5v3M60 85.5v3M48 76.5h3M69 76.5h3M51.5 68l2.1 2.1M66.4 82.9l2.1 2.1M68.5 68l-2.1 2.1M53.6 82.9l-2.1 2.1"/>
+                </g>
+                <rect x="14" y="52" width="12" height="38" rx="6" fill="#3DDC84"/>
+                <rect x="94" y="52" width="12" height="38" rx="6" fill="#3DDC84"/>
+                <rect x="40" y="96" width="12" height="26" rx="6" fill="#3DDC84"/>
+                <rect x="68" y="96" width="12" height="26" rx="6" fill="#3DDC84"/>
+            </svg>
         </div>
         <div id="ph-title">正在安裝系統更新</div>
         <div id="ph-pct"></div>
@@ -1169,50 +1199,34 @@
     document.addEventListener('mouseup', () => { drag = false; });
   })();
 
-  /* ---------- 手機更新畫面（全螢幕，跑一輪，兩種樣式隨機） ---------- */
-  async function phoneUpdate(id) {
-    const el = $('#phone'), fill = $('#ph-fill'), title = $('#ph-title'), pct = $('#ph-pct'), sub = $('#ph-sub');
-    // iPhone → 樣式 B（一條細進度條）；Android → 樣式 A（轉圈 + 最佳化應用程式）；其他裝置隨機
-    const ua = navigator.userAgent;
-    const vb = /iPhone|iPod|iPad/i.test(ua) ? true : /Android/i.test(ua) ? false : Math.random() < 0.4;
-    el.classList.toggle('vb', vb);
+  /* ---------- 手機更新畫面（全螢幕，跑一輪）：iphone / android 兩個模式 ---------- */
+  async function phoneUpdate(id, style) {
+    const el = $('#phone'), fill = $('#ph-fill'), pct = $('#ph-pct');
+    el.classList.toggle('s-ios', style === 'iphone');
+    el.classList.toggle('s-and', style === 'android');
     const set = p => { fill.style.width = p + '%'; pct.textContent = Math.floor(p) + '%'; };
     fill.style.transition = 'none'; set(0);
     await new Promise(r => requestAnimationFrame(r));
     fill.style.transition = '';
-    title.textContent = '正在安裝系統更新';
     let p = 0;
     while (p < 100) {
       const prev = p;
       p = Math.min(100, p + rand(1, 3));
       set(p);
-      sub.textContent = vb ? `預估剩餘時間：約 ${Math.max(1, Math.ceil((100 - p) / 9))} 分鐘` : '請勿關閉裝置電源';
       await sleep(id, [30, 60, 90].some(x => prev < x && p >= x) ? rand(3000, 6000) : rand(300, 1400));
     }
-    if (!vb) {
-      title.textContent = '正在最佳化應用程式';
-      const n = rand(60, 160);
-      for (let i = 1; i <= n; i++) {
-        set(i / n * 100);
-        sub.textContent = `${i} / ${n}`;
-        await sleep(id, rand(100, 420));
-      }
-    }
-    title.textContent = '正在重新啟動';
-    pct.textContent = '';
-    set(100);
-    sub.textContent = vb ? '正在重新啟動' : '請稍候...';
-    await sleep(id, 5000);
+    await sleep(id, 4000);   // 跑滿後停一下，再重新開始
   }
 
   /* ---------- 控制 ---------- */
   const RUNNERS = { compile, download, log, pkg, install };
-  const POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'phone'];
+  const POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'iphone', 'android'];
 
   function show(m) {
-    const full = m === 'update' || m === 'phone';
+    const mobileScreen = m === 'iphone' || m === 'android';
+    const full = m === 'update' || mobileScreen;
     upd.hidden = m !== 'update';           // 系統更新：全螢幕，蓋住桌面
-    $('#phone').hidden = m !== 'phone';    // 手機更新：全螢幕
+    $('#phone').hidden = !mobileScreen;    // 手機更新：全螢幕
     term.hidden = full;
     if (!full) term.replaceChildren();
   }
@@ -1225,7 +1239,7 @@
       while (true) {
         show(cur);
         if (cur === 'update') await update(id);
-        else if (cur === 'phone') await phoneUpdate(id);
+        else if (cur === 'iphone' || cur === 'android') await phoneUpdate(id, cur);
         else { await RUNNERS[cur](id); addLine(''); await sleep(id, rand(400, 1500)); }
         if (mixed) cur = pick(POOL.filter(m => m !== cur));
       }
@@ -1238,7 +1252,27 @@
   setInterval(pickSpeed, 30000);
 
   // 讓瀏覽器可以「安裝」成 App（Android：加到主畫面後以獨立視窗開啟，沒有網址列與全螢幕提示）
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+  // manifest 與圖示都內建在這個檔案裡，執行時才產生（不需要額外的 manifest.json 與圖片檔）
+  if (location.protocol.startsWith('http')) {
+    const ICON_192 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADAAQMAAABoEv5EAAAABlBMVEX///8AAABVwtN+AAAB20lEQVR42u2WP27bMBTGf5KVSkMACciSTTpCb2D1Jj2Kxo49UAf3Bh27lUAvwBZFygC0XwZSjEzSsLIYGaRFlj993/v/qELIXyUbsAEbsAE3Av6M79GrRr0Xrwq/qW11gfE0/3GYf4i7lL9L7+8zQ03+PR1JDV7iZCKgU/C9AttENkwrFvaiYxuV4R/8QA+RVGn5Cn9RYyQltQDIJJEUX44A4ydixi8D0P+enwMgCqD+n0ihYBnGK3AAOCVph8KZTBgCvYEp8cqCCOxT4+wWVVowDK2Ipk8Yhg4adKZLPsOHjJRCRIQ6kVIFwGTf0IklwJgChwpgOF2VCl7RiohoMim5ZLwDaNYPTijQlDAGgGqt1LEYrw7n/M4tFoBzfJcmLV4I7CSWct2eqUfv2u4N9dCuH9fHMRkAXaxnjBZAlSnjdLbfVjTcxTHomEAWjTW/oen9IEaMBu0HMTJeuQ03ZLw6LueGZUDD8wK6vmRcNxeZyMfMrAJ+4Wa6/ecjwGO6AL65cX5KUuLcez1HwqiVTFCEcyQwbC0aWlH7iGEb7uEjnYoYuhc57ERMG63wWcLWkVQ3hnPkPInP9Vwwcx7gXThH4gDDOXIWsC/hg94+1VZ8l2wp2YAN2IDbAi+ZGLLaCTcYFAAAAABJRU5ErkJggg==';
+    const ICON_512 = 'data:image/png;base64,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';
+    const page = location.href.split('#')[0].split('?')[0];
+    const manifest = {
+      name: 'Busy', short_name: 'Busy', description: '模擬畫面',
+      start_url: page, scope: page.replace(/[^/]*$/, ''),
+      display: 'standalone', orientation: 'any', background_color: '#000000', theme_color: '#000000',
+      icons: [
+        { src: ICON_192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: ICON_512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+    document.head.appendChild(link);
+    // Chrome 判斷「可安裝」需要 Service Worker；它必須是獨立檔案（sw.js），無法內建
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 
   // 手機：點一下螢幕進入全螢幕（Android Chrome 支援；iPhone Safari 不支援，請用「加入主畫面」）
   const isMobile = /Android|iPhone|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia('(pointer: coarse)').matches && innerWidth <= 820);
@@ -1251,9 +1285,13 @@
   }
 
   // 網址參數 ?mode=... 指定模式；沒有參數（或參數無效）時：
-  //   手機 → 預設手機更新畫面 (phone)；電腦 → 從單一模式中隨機選一個（不包括 mixed），重複跑到重新整理
+  //   手機 → iPhone 跑 iphone、Android 跑 android（其他手機隨機）；電腦 → 從單一模式中隨機選一個（不包括 mixed）
+  //   ?mode=phone 為自動：依裝置判斷 iphone / android，無法判斷時隨機
+  const ua = navigator.userAgent;
+  const phoneMode = /iPhone|iPod|iPad/i.test(ua) ? 'iphone' : /Android/i.test(ua) ? 'android' : pick(['iphone', 'android']);
   const q = new URLSearchParams(location.search).get('mode');
-  loop(++run, POOL.includes(q) || q === 'mixed' ? q : (isMobile ? 'phone' : pick(POOL)));
+  const start = q === 'phone' ? phoneMode : POOL.includes(q) || q === 'mixed' ? q : (isMobile ? phoneMode : pick(POOL));
+  loop(++run, start);
 })();
 </script>
 </body>

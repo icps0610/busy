@@ -1,6 +1,7 @@
 // 最小 Service Worker：網路優先，離線時使用快取（讓瀏覽器把這個網頁視為可安裝的 App）
-const CACHE = 'busy-v1';
-const FILES = ['./', 'index.html', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png'];
+// manifest 與圖示已內建在 index.html，這裡只需要快取頁面本身
+const CACHE = 'busy-v2';
+const FILES = ['./', 'index.html'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();

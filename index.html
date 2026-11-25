@@ -1,6 +1,31 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <!--
+        ============================================================
+        網址參數說明
+        ------------------------------------------------------------
+        ?mode=模式名稱    指定要跑的模式（沒有參數時，預設為 mixed 混合）
+
+        mode 可用值：
+          mixed      混合（預設）：全部模式隨機跳（跑完一個，隨機換下一個，無限循環）
+          compile    編譯（cargo / cmake）
+          download   下載（多檔同時下載）
+          log        伺服器日誌
+          pkg        套件更新（winget）
+          install    安裝程式（連續安裝常用軟體的 GUI 視窗）
+          update     系統更新（全螢幕藍底畫面）
+
+        說明：
+          - 指定單一模式時，只會重複跑該模式。
+          - 速度每 30 秒隨機變化一次（0.2 ~ 0.5 倍）。
+
+        範例：
+          index.html                 混合（預設）
+          index.html?mode=mixed      混合（全部隨機跳）
+          index.html?mode=install    只跑安裝程式
+        ============================================================
+    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Windows 11 Desktop Simulation</title>
@@ -1105,14 +1130,16 @@
     if (!isUpd) term.replaceChildren();
   }
 
-  // 整體循環：每跑完一輪，隨機換成另一個模式（不會連續重複）
-  async function loop(id, cur) {
+  // 單一模式：重複跑同一個模式；混合 (mixed)：每跑完一輪，隨機跳到另一個模式（不連續重複）
+  async function loop(id, startMode) {
+    const mixed = startMode === 'mixed';
+    let cur = mixed ? pick(POOL) : startMode;
     try {
       while (true) {
         show(cur);
         if (cur === 'update') await update(id);
         else { await RUNNERS[cur](id); addLine(''); await sleep(id, rand(400, 1500)); }
-        cur = pick(POOL.filter(m => m !== cur));
+        if (mixed) cur = pick(POOL.filter(m => m !== cur));
       }
     } catch (e) { if (e !== CANCEL) console.error('[錯誤]', e); }
   }
@@ -1122,9 +1149,9 @@
   pickSpeed();
   setInterval(pickSpeed, 30000);
 
-  // 每次進入網頁隨機起始（可用 ?mode=compile 指定起點）
+  // 網址參數 ?mode=... 指定模式；沒有參數（或參數無效）時，預設為混合 (mixed)
   const q = new URLSearchParams(location.search).get('mode');
-  loop(++run, POOL.includes(q) ? q : pick(POOL));
+  loop(++run, POOL.includes(q) ? q : 'mixed');
 })();
 </script>
 </body>

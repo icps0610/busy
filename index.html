@@ -145,10 +145,14 @@
         .terminal-content { flex: 1; min-height: 0; display: flex; background-color: #0c0c0c; }
         #stage { flex: 1; min-width: 0; position: relative; }
         #term {
-            position: absolute; inset: 0; padding: 10px 14px; display: flex; flex-direction: column;
-            justify-content: flex-end; overflow: hidden; color: #cccccc;
+            position: absolute; inset: 0; padding: 10px 14px; display: block;
+            overflow-y: auto; overflow-x: hidden; color: #cccccc;
             font: 17px/1.4 Consolas, 'Cascadia Mono', 'Courier New', monospace;
+            scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.22) transparent;
         }
+        #term::-webkit-scrollbar { width: 8px; }
+        #term::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 4px; }
+        #term::-webkit-scrollbar-track { background: transparent; }
         #term[hidden], #update[hidden] { display: none; }
         .ln { white-space: pre; min-height: 1.4em; }
         .ln.cmd { color: #f9f1a5; } .ln.dim { color: #767676; } .ln.warn { color: #f9f1a5; }
@@ -1030,11 +1034,13 @@
   }
 
   function addLine(text = '', cls = '', before = null) {
+    const atBottom = term.scrollHeight - term.scrollTop - term.clientHeight < 40;
     const d = document.createElement('div');
     d.className = 'ln ' + cls;
     d.textContent = text;
     term.insertBefore(d, before);
-    while (term.childElementCount > 300) term.firstChild.remove();
+    while (term.childElementCount > 600) term.firstChild.remove();
+    if (atBottom) term.scrollTop = term.scrollHeight;
     return d;
   }
 
@@ -1419,7 +1425,7 @@
     $('#phone').hidden = !mobileScreen;    // 手機更新：全螢幕
     $('#charge').hidden = m !== 'charge';  // 電池充電：全螢幕
     term.hidden = full;
-    if (!full) term.replaceChildren();
+    if (!full) term.scrollTop = term.scrollHeight;
   }
 
   // 單一模式：重複跑同一個模式；混合 (mixed)：每跑完一輪，隨機跳到另一個模式（不連續重複）
@@ -1441,7 +1447,7 @@
   }
 
   // 速度每 30 秒隨機換一次（0.2~0.5 倍）
-  const pickSpeed = () => { speed = +(0.0 + Math.random() * 0.5).toFixed(2); };
+  const pickSpeed = () => { speed = +(0.1 + Math.random() * 0.3).toFixed(2); };
   pickSpeed();
   setInterval(pickSpeed, 10000);
 

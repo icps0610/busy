@@ -1441,9 +1441,9 @@
   }
 
   // 速度每 30 秒隨機換一次（0.2~0.5 倍）
-  const pickSpeed = () => { speed = +(0.2 + Math.random() * 0.3).toFixed(2); };
+  const pickSpeed = () => { speed = +(0.0 + Math.random() * 0.5).toFixed(2); };
   pickSpeed();
-  setInterval(pickSpeed, 30000);
+  setInterval(pickSpeed, 10000);
 
   // 讓瀏覽器可以「安裝」成 App（Android：加到主畫面後以獨立視窗開啟，沒有網址列與全螢幕提示）
   // manifest 與圖示都內建在這個檔案裡，執行時才產生（不需要額外的 manifest.json 與圖片檔）

@@ -305,8 +305,6 @@
         #phone.vb .ph-bar { width: 200px; height: 3px; background: #333; }
         #phone.vb #ph-fill { background: #fff; }
         #phone.vb #ph-sub { font-size: 13px; margin-top: 8px; }
-        #fs-hint { position: fixed; left: 0; right: 0; bottom: 18px; text-align: center; z-index: 100001; color: rgba(255,255,255,.55); font: 13px sans-serif; pointer-events: none; }
-        #fs-hint[hidden] { display: none; }
         html, body { overscroll-behavior: none; }
 
         /* 窄螢幕（手機）版面 */
@@ -584,7 +582,6 @@
         <div class="ph-bar"><div id="ph-fill"></div></div>
         <div id="ph-sub">請勿關閉裝置電源</div>
     </div>
-    <div id="fs-hint" hidden>點一下螢幕進入全螢幕</div>
 
 <script>
     let zIndexCounter = 100;
@@ -1243,11 +1240,7 @@
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const rfs = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
   if (isMobile && !standalone && rfs) {
-    const hint = $('#fs-hint');
-    hint.hidden = false;
-    setTimeout(() => { hint.hidden = true; }, 6000);
     document.addEventListener('click', () => {
-      hint.hidden = true;
       try { const r = rfs.call(document.documentElement); if (r && r.catch) r.catch(() => {}); } catch (_) {}
     }, { once: true });
   }

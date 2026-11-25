@@ -21,8 +21,8 @@
 | `log` | 伺服器日誌：INFO、DEBUG、WARN、ERROR 分色 |
 | `pkg` | 套件更新：winget upgrade 風格 |
 | `install` | 安裝程式：桌面跳出安裝視窗，連續安裝 4～6 個常用軟體（Chrome、Firefox、LINE、Microsoft 365、7-Zip、Notepad++、Acrobat Reader、Zoom、VLC、VS Code、Teams 隨機抽），終端機同步跑安裝日誌 |
-| `aircrack` | 密碼比對：aircrack 風格的畫面（目標網路列表、已測試金鑰數與速度、剩餘時間、目前比對的密碼、跳動的金鑰十六進位值），跑到某個進度後顯示綠色的「KEY FOUND!」。**純視覺模擬**，不會做任何實際的事 |
-| `hashcat` | 密碼破解：hashcat 風格的狀態畫面（啟動訊息、Speed、Progress、Time.Estimated、Candidates、Hardware.Mon），跑到某個進度後顯示綠色的「Status: Cracked」。每輪隨機選 WPA / bcrypt / sha512crypt 其中一種。**純視覺模擬**，不會做任何實際的事 |
+| `aircrack` | 密碼比對：aircrack 風格的畫面（目標網路列表、已測試金鑰數與速度、剩餘時間、目前比對的密碼、跳動的金鑰十六進位值）。單獨執行時**永遠跑不完**，密碼欄一直跳隨機字元；在 `mixed` 中每輪最長 10 分鐘（或在某個進度顯示綠色的「KEY FOUND!」）。**純視覺模擬**，不會做任何實際的事 |
+| `hashcat` | 密碼破解：hashcat 風格的狀態畫面（啟動訊息、Speed、Progress、Time.Estimated、Candidates、Hardware.Mon）。單獨執行時用 8 位任意字元的遮罩攻擊，**永遠跑不完**，候選密碼一直跳隨機字元；在 `mixed` 中改為字典攻擊，每輪最長 10 分鐘（或在某個進度顯示綠色的「Status: Cracked」）。每輪隨機選 WPA / bcrypt / sha512crypt 其中一種。**純視覺模擬**，不會做任何實際的事 |
 | `update` | 系統更新：全螢幕藍底畫面，0% → 100% → 重新啟動，循環 |
 | `iphone` | 手機更新畫面（iPhone 風格）：全螢幕黑底，中間為白色蘋果圖示，下方一條細白色進度條，沒有文字。跑滿後停頓，再重新開始 |
 | `android` | 手機更新畫面（Android 風格）：全螢幕黑底，中間為會轉動齒輪的 Android 小綠人，下方是寬圓角綠色進度條與百分比。跑滿後停頓，再重新開始 |

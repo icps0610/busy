@@ -16,6 +16,7 @@
           install    安裝程式（連續安裝常用軟體的 GUI 視窗）
           aircrack   密碼比對（aircrack 風格的畫面，純視覺模擬，不會做任何實際的事）
           hashcat    密碼破解（hashcat 風格的狀態畫面，純視覺模擬，不會做任何實際的事）
+                     ※ aircrack / hashcat 單獨跑時永遠不會結束（密碼欄一直跳隨機字元）；在 mixed 中每輪最長 10 分鐘
           update     系統更新（全螢幕藍底畫面）
           iphone     手機更新畫面：iPhone 風格（蘋果圖示 + 一條細進度條，沒有文字）
           android    手機更新畫面：Android 風格（小綠人 + 寬進度條 + 百分比）
@@ -1031,7 +1032,7 @@
   const CANCEL = Symbol('cancel');
   const PS = 'PS C:\\Users\\Administrator> ';
   const MODES = ['mixed', 'compile', 'download', 'log', 'pkg', 'update'];
-  let run = 0, speed = 1, paused = false, mode = 'mixed';
+  let run = 0, speed = 1, paused = false, mode = 'mixed', mixedRun = false;   // mixedRun：目前是否在混合模式中（aircrack / hashcat 單獨跑時不會結束，混合時最長 10 分鐘）
 
   const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
   const pick = a => a[rand(0, a.length - 1)];
@@ -1422,6 +1423,9 @@
 
   /* ---------- 假的 aircrack 風格密碼比對（純視覺模擬，不會做任何實際的事） ---------- */
   const AC_WORDS = ['sunshine', 'dragon', 'welcome', 'football', 'monkey', 'letmein', 'shadow', 'master', 'qwerty', 'iloveyou', 'princess', 'admin', 'password', 'hello', 'freedom', 'whatever', 'butterfly', 'superman', 'starwars', 'michael', 'charlie', 'banana', 'dolphin', 'guitar'];
+  const RC_SET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  const randChars = n => Array.from({ length: n }, () => RC_SET[rand(0, RC_SET.length - 1)]).join('');
+  const MIX_LIMIT = 10 * 60 * 1000;   // 混合模式：aircrack / hashcat 每輪最長 10 分鐘
   const AC_ESSID = ['HomeNet-5G', 'TestLab-AP', 'OfficeGuest', 'CafeWiFi', 'Linksys-2G', 'Lab-Router', 'Guest-WiFi'];
   const hexBytes = n => Array.from({ length: n }, () => rand(0, 255).toString(16).toUpperCase().padStart(2, '0'));
   const hexRows = (n, per = 16) => { const b = hexBytes(n), rows = []; for (let i = 0; i < n; i += per) rows.push(b.slice(i, i + per).join(' ')); return rows; };
@@ -1478,20 +1482,23 @@
     await sleep(id, 1000);
     addLine('');
 
-    const total = rand(300000, 2000000);
-    const target = Math.floor(total * (0.3 + Math.random() * 0.6));   // 在這個進度「找到」密碼
+    // 單獨執行：永遠跑不完、也不會找到密碼（密碼欄一直跳隨機字元）；混合模式：最多跑 10 分鐘，或在某個進度找到密碼
+    const endless = !mixedRun, t0 = Date.now();
+    const total = endless ? rand(500000000, 2000000000) : rand(300000, 2000000);
+    const target = endless ? Infinity : Math.floor(total * (0.3 + Math.random() * 0.6));
     term.replaceChildren();   // 像 aircrack 一樣清除畫面，只留下即時更新的區塊
     const blk = addLine('');
     let keys = 0, elapsed = 0, rate = rand(1800, 3200);
     while (keys < target) {
+      if (!endless && Date.now() - t0 > MIX_LIMIT) return;
       rate = Math.max(1200, Math.min(3600, rate + (Math.random() - 0.5) * 160));
       keys = Math.min(target, keys + Math.floor(rate));
       elapsed += 1;
-      blk.textContent = acFrame({ elapsed, keys, total, rate, phrase: randPhrase() });
+      blk.textContent = acFrame({ elapsed, keys, total, rate, phrase: randChars(rand(8, 12)) });
       await sleep(id, 100);
     }
     blk.className = 'ln ok';
-    blk.textContent = acFrame({ elapsed, keys, total, rate, phrase: pick(AC_WORDS) + rand(1000, 9999), found: true });
+    blk.textContent = acFrame({ elapsed, keys, total, rate, phrase: randChars(rand(8, 12)), found: true });
     await sleep(id, 6000);
   }
 
@@ -1519,7 +1526,9 @@
 
   function hcFrame(o) {
     const m = o.mode, pct = (o.keys / o.total * 100).toFixed(2);
-    const est = new Date(o.start.getTime() + (o.found ? o.elapsed : o.elapsed + (o.total - o.keys) / (o.rate * 1000)) * 1000);
+    const left = o.found ? 0 : (o.total - o.keys) / (o.rate * 1000);
+    const far = left > 3153600000;   // 超過約 100 年
+    const est = new Date(o.start.getTime() + (o.elapsed + left) * 1000);
     const L = [];
     const SKIP = ['Guess.Queue', 'Restore.Sub.#1', 'Candidate.Engine'];   // 破解成功的畫面為了塞進視窗，略過幾列
     const kv = (k, v) => { if (!(o.found && SKIP.includes(k))) L.push(hcDots(k) + v); };
@@ -1528,9 +1537,9 @@
     kv('Hash.Mode', `${m.id} (${m.name})`);
     kv('Hash.Target', o.target);
     kv('Time.Started', `${hcDate(o.start)} (${hcDur(o.elapsed)})`);
-    kv('Time.Estimated', `${hcDate(est)} (${o.found ? '0 secs' : hcDur((o.total - o.keys) / (o.rate * 1000))})`);
+    kv('Time.Estimated', `${far ? 'Next Century' : hcDate(est)} (${o.found ? '0 secs' : hcDur(left)})`);
     kv('Kernel.Feature', m.kernel);
-    kv('Guess.Base', 'File (rockyou.txt)');
+    kv('Guess.Base', o.base);
     kv('Guess.Queue', '1/1 (100.00%)');
     kv('Speed.#1', `${o.rate.toFixed(1).padStart(8)} kH/s (${o.ms.toFixed(2)}ms) @ ${m.tune}`);
     kv('Recovered', o.found ? '1/1 (100.00%) Digests (total), 1/1 (100.00%) Digests (new)' : '0/1 (0.00%) Digests (total), 0/1 (0.00%) Digests (new)');
@@ -1551,7 +1560,10 @@
       : m.target === 'bcrypt' ? `$2a$10$${b64s(53)}`
         : `$6$${b64s(8)}$${b64s(10)}...${b64s(8)}`;
     const hashFile = m.target === 'wpa' ? 'hash.hc22000' : 'hashes.txt';
-    addLine(PS + `hashcat -m ${m.id} -a 0 ${hashFile} rockyou.txt`, 'cmd');
+    // 單獨執行：用遮罩攻擊（8 位任意字元，永遠跑不完，候選密碼一直跳隨機字元）；混合模式：字典攻擊，最多 10 分鐘或在某個進度破解成功
+    const endless = !mixedRun, t0 = Date.now();
+    const MASK = '?a?a?a?a?a?a?a?a';
+    addLine(PS + (endless ? `hashcat -m ${m.id} -a 3 ${hashFile} ${MASK}` : `hashcat -m ${m.id} -a 0 ${hashFile} rockyou.txt`), 'cmd');
     addLine('hashcat (v6.2.6) starting');
     await sleep(id, 900);
     addLine('');
@@ -1568,22 +1580,27 @@
     addLine('');
     addLine('Watchdog: Temperature abort trigger set to 90c');
     addLine('');
-    addLine('Dictionary cache hit:');
-    addLine('* Filename..: rockyou.txt', 'dim');
-    addLine('* Passwords.: 14344385', 'dim');
-    addLine('* Keyspace..: 14344385', 'dim');
-    addLine('');
+    if (!endless) {
+      addLine('Dictionary cache hit:');
+      addLine('* Filename..: rockyou.txt', 'dim');
+      addLine('* Passwords.: 14344385', 'dim');
+      addLine('* Keyspace..: 14344385', 'dim');
+      addLine('');
+    }
     await sleep(id, 1200);
 
-    const total = 14344385;
-    const goal = Math.floor(total * (0.25 + Math.random() * 0.65));   // 在這個進度「破解成功」
+    const total = endless ? 95 ** 8 : 14344385;
+    const base = endless ? `Mask (${MASK}) [8]` : 'File (rockyou.txt)';
+    const goal = endless ? Infinity : Math.floor(total * (0.25 + Math.random() * 0.65));   // 在這個進度「破解成功」
+    const cand = () => endless ? randChars(8) : randPhrase();
     term.replaceChildren();
     const blk = addLine(''), hint = addLine('[s]tatus [p]ause [b]ypass [c]heckpoint [f]inish [q]uit =>', 'dim');
     const start = new Date();
     const lo = m.rate[0], hi = m.rate[1];
     let keys = 0, elapsed = 0, rate = rand(lo, hi), temp = rand(62, 70), core = rand(1740, 1890);
-    const mk = o => Object.assign({ mode: m, target, start, total, rate, keys, elapsed, ms: 1000 / rate * 0.55 + Math.random() * 0.2, temp, fan: Math.min(100, temp - 3 + rand(0, 4)), util: rand(98, 100), core, cand: [randPhrase(), randPhrase()] }, o);
+    const mk = o => Object.assign({ mode: m, target, base, start, total, rate, keys, elapsed, ms: 1000 / rate * 0.55 + Math.random() * 0.2, temp, fan: Math.min(100, temp - 3 + rand(0, 4)), util: rand(98, 100), core, cand: [cand(), cand()] }, o);
     while (keys < goal) {
+      if (!endless && Date.now() - t0 > MIX_LIMIT) return;
       rate = Math.max(lo, Math.min(hi, rate + (Math.random() - 0.5) * (hi - lo) * 0.06));
       keys = Math.min(goal, keys + Math.floor(rate * 1000));
       elapsed += 1;
@@ -1592,7 +1609,7 @@
       blk.textContent = hcFrame(mk({}));
       await sleep(id, 100);
     }
-    const phrase = randPhrase();
+    const phrase = cand();
     const found = (m.target === 'wpa' ? `${b64s(32).toLowerCase().replace(/[^a-z0-9]/g, 'a')}*${ap.replace(/:/g, '')}*${sta.replace(/:/g, '')}*${essid}` : target) + ':' + phrase;
     blk.className = 'ln ok';
     hint.remove();
@@ -1624,6 +1641,7 @@
   // 電腦端（!isMobile）的 mixed 只會在電腦模式間切換，不會跳到手機相關模式
   async function loop(id, startMode) {
     const mixed = startMode === 'mixed';
+    mixedRun = mixed;
     const pool = isMobile ? ALL_MODES : DESKTOP_POOL;
     let cur = mixed ? pick(pool) : startMode;
     try {

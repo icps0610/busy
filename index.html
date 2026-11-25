@@ -14,6 +14,8 @@
           log        伺服器日誌
           pkg        套件更新（winget）
           install    安裝程式（連續安裝常用軟體的 GUI 視窗）
+          aircrack   密碼比對（aircrack 風格的畫面，純視覺模擬，不會做任何實際的事）
+          hashcat    密碼破解（hashcat 風格的狀態畫面，純視覺模擬，不會做任何實際的事）
           update     系統更新（全螢幕藍底畫面）
           iphone     手機更新畫面：iPhone 風格（蘋果圖示 + 一條細進度條，沒有文字）
           android    手機更新畫面：Android 風格（小綠人 + 寬進度條 + 百分比）
@@ -22,7 +24,7 @@
 
         說明：
           - 沒有參數或參數無效時：
-              電腦：每次進入網頁，從電腦模式（compile / download / log / pkg / install / update）中隨機選一個，並重複跑該模式，直到重新整理網頁（不會隨機到 iphone / android / charge）。
+              電腦：每次進入網頁，從電腦模式（compile / download / log / pkg / install / aircrack / hashcat / update）中隨機選一個，並重複跑該模式，直到重新整理網頁（不會隨機到 iphone / android / charge）。
               手機：iPhone 預設跑 iphone，Android 預設跑 android（其他手機隨機）。
           - 手機點一下螢幕進入全螢幕（Android Chrome）；iPhone 請用「分享 → 加入主畫面」後從主畫面開啟。
           - 指定單一模式時，只會重複跑該模式。
@@ -1418,9 +1420,189 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
   }
 
+  /* ---------- 假的 aircrack 風格密碼比對（純視覺模擬，不會做任何實際的事） ---------- */
+  const AC_WORDS = ['sunshine', 'dragon', 'welcome', 'football', 'monkey', 'letmein', 'shadow', 'master', 'qwerty', 'iloveyou', 'princess', 'admin', 'password', 'hello', 'freedom', 'whatever', 'butterfly', 'superman', 'starwars', 'michael', 'charlie', 'banana', 'dolphin', 'guitar'];
+  const AC_ESSID = ['HomeNet-5G', 'TestLab-AP', 'OfficeGuest', 'CafeWiFi', 'Linksys-2G', 'Lab-Router', 'Guest-WiFi'];
+  const hexBytes = n => Array.from({ length: n }, () => rand(0, 255).toString(16).toUpperCase().padStart(2, '0'));
+  const hexRows = (n, per = 16) => { const b = hexBytes(n), rows = []; for (let i = 0; i < n; i += per) rows.push(b.slice(i, i + per).join(' ')); return rows; };
+  function randPhrase() {
+    const w = pick(AC_WORDS), r = Math.random();
+    if (r < 0.3) return w + rand(0, 9999);
+    if (r < 0.5) return w.charAt(0).toUpperCase() + w.slice(1) + rand(10, 99) + pick(['!', '#', '@', '']);
+    if (r < 0.7) return pick(AC_WORDS) + w;
+    if (r < 0.85) return w + (2000 + rand(0, 26));
+    return w;
+  }
+  const acClock = s => { s = Math.floor(s); return `[${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}]`; };
+  function acTime(s) {
+    s = Math.max(0, Math.floor(s));
+    const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+    const u = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+    return [d && u(d, 'day'), (d || h) && u(h, 'hour'), (d || h || m) && u(m, 'minute'), u(sec, 'second')].filter(Boolean).join(', ');
+  }
+  function acFrame(o) {
+    const IND = ' '.repeat(23);
+    const rows = (label, list) => list.map((r, i) => (i ? IND : `      ${label.padEnd(15)}: `) + r);
+    const L = [' '.repeat(30) + 'Aircrack-ng 1.7', ''];
+    L.push(`      ${acClock(o.elapsed)} ${o.keys}/${o.total} keys tested (${o.rate.toFixed(2)} k/s)`, '');
+    if (o.found) {
+      L.push(' '.repeat(25) + `KEY FOUND! [ ${o.phrase} ]`, '');
+    } else {
+      L.push(`      Time left: ${acTime((o.total - o.keys) / o.rate)}`.padEnd(66) + (o.keys / o.total * 100).toFixed(2) + '%', '');
+      L.push(' '.repeat(25) + `Current passphrase: ${o.phrase}`, '');
+    }
+    L.push(...rows('Master Key', hexRows(32)), '');
+    L.push(...rows('Transient Key', hexRows(64)), '');
+    L.push(...rows('EAPOL HMAC', hexRows(16)));
+    return L.join('\n');
+  }
+
+  async function aircrack(id) {
+    const bssid = hexBytes(6).join(':'), essid = pick(AC_ESSID);
+    addLine(PS + `aircrack-ng -w rockyou.txt -b ${bssid} capture-01.cap`, 'cmd');
+    addLine('Reading packets, please wait...');
+    await sleep(id, 900);
+    addLine('Opening capture-01.cap');
+    await sleep(id, 700);
+    addLine(`Read ${rand(8000, 98000)} packets.`, 'dim');
+    addLine('');
+    addLine('   #  BSSID              ESSID                     Encryption');
+    addLine('');
+    addLine(`   1  ${bssid}  ${essid.padEnd(24)}  WPA (1 handshake)`);
+    addLine('');
+    addLine('Choosing first network as target.');
+    await sleep(id, 900);
+    addLine('');
+    addLine('Opening capture-01.cap');
+    addLine('Reading packets, please wait...');
+    await sleep(id, 1000);
+    addLine('');
+
+    const total = rand(300000, 2000000);
+    const target = Math.floor(total * (0.3 + Math.random() * 0.6));   // 在這個進度「找到」密碼
+    term.replaceChildren();   // 像 aircrack 一樣清除畫面，只留下即時更新的區塊
+    const blk = addLine('');
+    let keys = 0, elapsed = 0, rate = rand(1800, 3200);
+    while (keys < target) {
+      rate = Math.max(1200, Math.min(3600, rate + (Math.random() - 0.5) * 160));
+      keys = Math.min(target, keys + Math.floor(rate));
+      elapsed += 1;
+      blk.textContent = acFrame({ elapsed, keys, total, rate, phrase: randPhrase() });
+      await sleep(id, 100);
+    }
+    blk.className = 'ln ok';
+    blk.textContent = acFrame({ elapsed, keys, total, rate, phrase: pick(AC_WORDS) + rand(1000, 9999), found: true });
+    await sleep(id, 6000);
+  }
+
+  /* ---------- 假的 hashcat 風格密碼破解狀態畫面（純視覺模擬，不會做任何實際的事） ---------- */
+  const HC_MODES = [
+    { id: 22000, name: 'WPA-PBKDF2-PMKID+EAPOL', minLen: 8, maxLen: 63, rate: [38, 92], kernel: 'Pure Kernel', tune: 'Accel:128 Loops:64 Thr:256 Vec:1', target: 'wpa' },
+    { id: 3200, name: 'bcrypt $2*$, Blowfish (Unix)', minLen: 0, maxLen: 72, rate: [14, 36], kernel: 'Pure Kernel', tune: 'Accel:16 Loops:32 Thr:8 Vec:1', target: 'bcrypt' },
+    { id: 1800, name: 'sha512crypt $6$, SHA512 (Unix)', minLen: 0, maxLen: 15, rate: [55, 130], kernel: 'Optimized Kernel', tune: 'Accel:64 Loops:128 Thr:128 Vec:1', target: 'sha512' },
+  ];
+  const HC_GPUS = [
+    ['NVIDIA GeForce RTX 3060', '11264/12044 MB (3011 MB allocatable), 28MCU'],
+    ['NVIDIA GeForce RTX 4070', '11907/12282 MB (3070 MB allocatable), 46MCU'],
+    ['NVIDIA GeForce GTX 1660 SUPER', '5058/6144 MB (1536 MB allocatable), 22MCU'],
+  ];
+  const B64 = './ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const b64s = n => Array.from({ length: n }, () => B64[rand(0, 63)]).join('');
+  const hcDate = d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()] + ' ' + String(d.getDate()).padStart(2, ' ') + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + ' ' + d.getFullYear();
+  function hcDur(s) {
+    s = Math.max(0, Math.floor(s));
+    const parts = [[Math.floor(s / 31536000), 'year'], [Math.floor(s % 31536000 / 86400), 'day'], [Math.floor(s % 86400 / 3600), 'hour'], [Math.floor(s % 3600 / 60), 'min'], [s % 60, 'sec']];
+    const i = parts.findIndex(p => p[0] > 0);
+    return parts.slice(i < 0 ? 4 : i, (i < 0 ? 4 : i) + 2).map(([n, w]) => `${n} ${w}${n === 1 ? '' : 's'}`).join(', ');
+  }
+  const hcDots = (label, w = 17) => label + '.'.repeat(Math.max(1, w - label.length)) + ': ';
+
+  function hcFrame(o) {
+    const m = o.mode, pct = (o.keys / o.total * 100).toFixed(2);
+    const est = new Date(o.start.getTime() + (o.found ? o.elapsed : o.elapsed + (o.total - o.keys) / (o.rate * 1000)) * 1000);
+    const L = [];
+    const SKIP = ['Guess.Queue', 'Restore.Sub.#1', 'Candidate.Engine'];   // 破解成功的畫面為了塞進視窗，略過幾列
+    const kv = (k, v) => { if (!(o.found && SKIP.includes(k))) L.push(hcDots(k) + v); };
+    kv('Session', 'hashcat');
+    kv('Status', o.found ? 'Cracked' : 'Running');
+    kv('Hash.Mode', `${m.id} (${m.name})`);
+    kv('Hash.Target', o.target);
+    kv('Time.Started', `${hcDate(o.start)} (${hcDur(o.elapsed)})`);
+    kv('Time.Estimated', `${hcDate(est)} (${o.found ? '0 secs' : hcDur((o.total - o.keys) / (o.rate * 1000))})`);
+    kv('Kernel.Feature', m.kernel);
+    kv('Guess.Base', 'File (rockyou.txt)');
+    kv('Guess.Queue', '1/1 (100.00%)');
+    kv('Speed.#1', `${o.rate.toFixed(1).padStart(8)} kH/s (${o.ms.toFixed(2)}ms) @ ${m.tune}`);
+    kv('Recovered', o.found ? '1/1 (100.00%) Digests (total), 1/1 (100.00%) Digests (new)' : '0/1 (0.00%) Digests (total), 0/1 (0.00%) Digests (new)');
+    kv('Progress', `${o.keys}/${o.total} (${pct}%)`);
+    kv('Rejected', `0/${o.keys} (0.00%)`);
+    kv('Restore.Point', `${o.keys - o.keys % 64}/${o.total} (${(Math.floor(o.keys / 64) * 64 / o.total * 100).toFixed(2)}%)`);
+    kv('Restore.Sub.#1', 'Salt:0 Amplifier:0-1 Iteration:0-1');
+    kv('Candidate.Engine', 'Device Generator');
+    kv('Candidates.#1', `${o.cand[0]} -> ${o.cand[1]}`);
+    kv('Hardware.Mon.#1', `Temp: ${o.temp}c Fan: ${o.fan}% Util:${String(o.util).padStart(3)}% Core:${o.core}MHz Mem:7001MHz Bus:16`);
+    return L.join('\n');
+  }
+
+  async function hashcat(id) {
+    const m = pick(HC_MODES), gpu = pick(HC_GPUS);
+    const ap = hexBytes(6).join(':').toLowerCase(), sta = hexBytes(6).join(':').toLowerCase(), essid = pick(AC_ESSID);
+    const target = m.target === 'wpa' ? `${essid} (AP:${ap} STA:${sta})`
+      : m.target === 'bcrypt' ? `$2a$10$${b64s(53)}`
+        : `$6$${b64s(8)}$${b64s(10)}...${b64s(8)}`;
+    const hashFile = m.target === 'wpa' ? 'hash.hc22000' : 'hashes.txt';
+    addLine(PS + `hashcat -m ${m.id} -a 0 ${hashFile} rockyou.txt`, 'cmd');
+    addLine('hashcat (v6.2.6) starting');
+    await sleep(id, 900);
+    addLine('');
+    addLine('OpenCL API (OpenCL 3.0 CUDA 12.2.148) - Platform #1 [NVIDIA Corporation]');
+    addLine('=======================================================================');
+    addLine(`* Device #1: ${gpu[0]}, ${gpu[1]}`);
+    addLine('');
+    addLine(`Minimum password length supported by kernel: ${m.minLen}`);
+    addLine(`Maximum password length supported by kernel: ${m.maxLen}`);
+    addLine('');
+    addLine('Hashes: 1 digests; 1 unique digests, 1 unique salts');
+    addLine('Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates');
+    await sleep(id, 800);
+    addLine('');
+    addLine('Watchdog: Temperature abort trigger set to 90c');
+    addLine('');
+    addLine('Dictionary cache hit:');
+    addLine('* Filename..: rockyou.txt', 'dim');
+    addLine('* Passwords.: 14344385', 'dim');
+    addLine('* Keyspace..: 14344385', 'dim');
+    addLine('');
+    await sleep(id, 1200);
+
+    const total = 14344385;
+    const goal = Math.floor(total * (0.25 + Math.random() * 0.65));   // 在這個進度「破解成功」
+    term.replaceChildren();
+    const blk = addLine(''), hint = addLine('[s]tatus [p]ause [b]ypass [c]heckpoint [f]inish [q]uit =>', 'dim');
+    const start = new Date();
+    const lo = m.rate[0], hi = m.rate[1];
+    let keys = 0, elapsed = 0, rate = rand(lo, hi), temp = rand(62, 70), core = rand(1740, 1890);
+    const mk = o => Object.assign({ mode: m, target, start, total, rate, keys, elapsed, ms: 1000 / rate * 0.55 + Math.random() * 0.2, temp, fan: Math.min(100, temp - 3 + rand(0, 4)), util: rand(98, 100), core, cand: [randPhrase(), randPhrase()] }, o);
+    while (keys < goal) {
+      rate = Math.max(lo, Math.min(hi, rate + (Math.random() - 0.5) * (hi - lo) * 0.06));
+      keys = Math.min(goal, keys + Math.floor(rate * 1000));
+      elapsed += 1;
+      temp = Math.max(60, Math.min(79, temp + rand(-1, 1)));
+      core = Math.max(1700, Math.min(1950, core + rand(-15, 15)));
+      blk.textContent = hcFrame(mk({}));
+      await sleep(id, 100);
+    }
+    const phrase = randPhrase();
+    const found = (m.target === 'wpa' ? `${b64s(32).toLowerCase().replace(/[^a-z0-9]/g, 'a')}*${ap.replace(/:/g, '')}*${sta.replace(/:/g, '')}*${essid}` : target) + ':' + phrase;
+    blk.className = 'ln ok';
+    hint.remove();
+    blk.textContent = found + '\n\n' + hcFrame(mk({ found: true, cand: [phrase, phrase] }));
+    await sleep(id, 6000);
+  }
+
   /* ---------- 控制 ---------- */
-  const RUNNERS = { compile, download, log, pkg, install };
-  const DESKTOP_POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update'];
+  const RUNNERS = { compile, download, log, pkg, install, aircrack, hashcat };
+  const DESKTOP_POOL = ['compile', 'download', 'log', 'pkg', 'install', 'update', 'aircrack', 'hashcat'];
   const MOBILE_POOL = ['iphone', 'android', 'charge'];
   const ALL_MODES = [...DESKTOP_POOL, ...MOBILE_POOL];
   const isMobile = /Android|iPhone|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia('(pointer: coarse)').matches && innerWidth <= 820);

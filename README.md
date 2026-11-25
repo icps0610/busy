@@ -1,6 +1,6 @@
 # busy
 
-模擬 Windows 11 桌面的單頁網頁：桌面上有一個 PowerShell 視窗，會持續顯示編譯、下載、日誌、安裝、系統更新等畫面。
+模擬 Windows 11 桌面的單頁網頁：桌面上有一個 PowerShell 視窗，會持續顯示編譯、下載、日誌、安裝、密碼比對與破解、系統更新等畫面。
 
 單一 `index.html`，沒有框架、沒有外部 script，直接開啟即可使用，也可放在 GitHub Pages。
 
@@ -21,13 +21,15 @@
 | `log` | 伺服器日誌：INFO、DEBUG、WARN、ERROR 分色 |
 | `pkg` | 套件更新：winget upgrade 風格 |
 | `install` | 安裝程式：桌面跳出安裝視窗，連續安裝 4～6 個常用軟體（Chrome、Firefox、LINE、Microsoft 365、7-Zip、Notepad++、Acrobat Reader、Zoom、VLC、VS Code、Teams 隨機抽），終端機同步跑安裝日誌 |
+| `aircrack` | 密碼比對：aircrack 風格的畫面（目標網路列表、已測試金鑰數與速度、剩餘時間、目前比對的密碼、跳動的金鑰十六進位值），跑到某個進度後顯示綠色的「KEY FOUND!」。**純視覺模擬**，不會做任何實際的事 |
+| `hashcat` | 密碼破解：hashcat 風格的狀態畫面（啟動訊息、Speed、Progress、Time.Estimated、Candidates、Hardware.Mon），跑到某個進度後顯示綠色的「Status: Cracked」。每輪隨機選 WPA / bcrypt / sha512crypt 其中一種。**純視覺模擬**，不會做任何實際的事 |
 | `update` | 系統更新：全螢幕藍底畫面，0% → 100% → 重新啟動，循環 |
 | `iphone` | 手機更新畫面（iPhone 風格）：全螢幕黑底，中間為白色蘋果圖示，下方一條細白色進度條，沒有文字。跑滿後停頓，再重新開始 |
 | `android` | 手機更新畫面（Android 風格）：全螢幕黑底，中間為會轉動齒輪的 Android 小綠人，下方是寬圓角綠色進度條與百分比。跑滿後停頓，再重新開始 |
 | `charge` | 電池充電畫面：全螢幕黑底，中間為動態充電電量環、電池液位與閃電圖示，顯示充電百分比與預估時間。跑滿後停頓，再重新開始 |
 | `phone` | 自動判斷：iPhone 裝置跑 `iphone`，Android 裝置跑 `android`，其他裝置隨機選一個 |
 
-- 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`update` 隨機選一個（不包括 `mixed` 與手機相關模式 `iphone`、`android`、`charge`），並重複跑該模式；手機依裝置跑 `iphone` 或 `android`。
+- 沒有參數或參數無效時：電腦從 `compile`、`download`、`log`、`pkg`、`install`、`aircrack`、`hashcat`、`update` 隨機選一個（不包括 `mixed` 與手機相關模式 `iphone`、`android`、`charge`），並重複跑該模式；手機依裝置跑 `iphone` 或 `android`。
 - 指定單一模式時，只會重複跑該模式（包含手動指定 `?mode=iphone`、`?mode=android`、`?mode=charge`）。
 - 指定 `mixed` 才會在模式之間隨機跳；電腦端 `mixed` 只會在電腦模式間切換，不會跳到手機相關模式。
 - 一輪的長短依模式與速度而定：編譯、下載、日誌、套件更新約數十秒到數分鐘；安裝程式是一整串軟體；系統更新為完整的 0% → 100% → 重新啟動。

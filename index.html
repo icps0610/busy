@@ -5,37 +5,51 @@
         ============================================================
         網址參數說明
         ------------------------------------------------------------
-        ?mode=模式名稱    指定要跑的模式（沒有參數時，電腦預設為 multi 多視窗）
+        ?mode=模式名稱    指定要跑的模式
 
-        mode 可用值：
-          mixed      混合：一直隨機跳（每跑完一輪，隨機換成另一個模式，直到重新整理）
-          random     隨機單一：從電腦的單一畫面模式（不含 multi）隨機選一個，並一直重複跑該模式，直到重新整理（手機：跑手機更新畫面）
+        沒有參數（或參數無效）時：
+          電腦  跑 multi（多視窗）
+          手機  在「自己品牌的更新畫面」（iPhone → iphone、Android → android）與 charge 之間隨機二選一
+
+        ------------------------------------------------------------
+        組合模式
+        ------------------------------------------------------------
+          multi      多視窗：同時開 2~4 個終端機視窗，各跑一個隨機的終端機畫面（compile / download / log / pkg / aircrack / hashcat
+                     不重複挑選）並一直循環。視窗大致排成格子，位置與大小再隨機偏移，可能略微重疊。
+                     電腦的預設；手機為上下堆疊、最多 3 個；在 mixed 中最長 10 分鐘
+          mixed      混合：一直隨機跳，每跑完一輪就換成另一個模式（不連續重複），直到重新整理。
+                     電腦只在電腦模式（含 multi）間切換；手機在所有模式間切換（不含 multi）
+          random     隨機單一：電腦從單一畫面模式（compile / download / log / pkg / install / aircrack / hashcat / update，
+                     不含 multi）隨機選一個，並一直重複跑該模式。手機的行為同手機預設
+          phone      手機畫面：自己品牌的更新畫面（依裝置判斷 iphone / android，無法判斷時隨機）或 charge，隨機二選一（手機的預設）
+
+        ------------------------------------------------------------
+        單一畫面模式（只重複跑該模式）
+        ------------------------------------------------------------
+        電腦：
           compile    編譯（cargo / cmake）
           download   下載（多檔同時下載）
           log        伺服器日誌
           pkg        套件更新（winget）
           install    安裝程式（連續安裝常用軟體的 GUI 視窗）
-          aircrack   密碼比對（aircrack 風格的畫面，純視覺模擬，不會做任何實際的事）
-          hashcat    密碼破解（hashcat 風格的狀態畫面，純視覺模擬，不會做任何實際的事）
-                     ※ aircrack / hashcat 單獨跑時永遠不會結束（密碼欄一直跳隨機字元）；在 mixed 中每輪最長 10 分鐘
-          multi      多視窗：同時開 2~4 個終端機視窗（排成不重疊的格子，位置隨機），各跑一個隨機的終端機畫面並一直循環（電腦的預設；在 mixed 中最長 10 分鐘）
+          aircrack   密碼比對（aircrack 風格的畫面）
+          hashcat    密碼破解（hashcat 風格的狀態畫面）
+                     ※ aircrack / hashcat 是純視覺模擬，不會做任何實際的事；單獨跑時永遠不會結束（密碼欄一直跳隨機字元），
+                       在 mixed 中每輪最長 10 分鐘
           update     系統更新（全螢幕藍底畫面）
-          iphone     手機更新畫面：iPhone 風格（蘋果圖示 + 一條細進度條，沒有文字）
-          android    手機更新畫面：Android 風格（小綠人 + 寬進度條 + 百分比）
+        手機（全螢幕）：
+          iphone     更新畫面：iPhone 風格（蘋果圖示 + 一條細進度條，沒有文字）
+          android    更新畫面：Android 風格（小綠人 + 寬進度條 + 百分比）
           charge     電池充電畫面：全螢幕充電動畫與電量百分比
-          phone      手機更新畫面：自動判斷（iPhone 裝置 → iphone；Android 裝置 → android；其他隨機）
 
-        說明：
-          - 沒有參數或參數無效時：
-              電腦：預設跑 multi（多視窗）；想要「隨機選一個單一模式並重複跑」請用 ?mode=random（從 compile / download / log / pkg / install / aircrack / hashcat / update 中選一個）。
-              手機：iPhone 預設跑 iphone，Android 預設跑 android（其他手機隨機）。
+        ------------------------------------------------------------
+        補充
+        ------------------------------------------------------------
           - 手機點一下螢幕進入全螢幕（Android Chrome）；iPhone 請用「分享 → 加入主畫面」後從主畫面開啟。
-          - 指定單一模式時，只會重複跑該模式。
-          - mixed 每個模式跑完一輪後，隨機換成另一個模式，直到重新整理網頁（電腦只會在電腦模式之間切換，不會切換到手機相關模式）。
-          - 速度每 30 秒隨機變化一次（0.2 ~ 0.5 倍）。
+          - 速度每 10 秒隨機變化一次（0.1 ~ 0.4 倍），可修改 pickSpeed 調整。
 
         範例：
-          index.html                 多視窗（預設）
+          index.html                 預設（電腦：多視窗；手機：自己品牌更新畫面或充電畫面）
           index.html?mode=random     隨機選一個單一模式並重複跑
           index.html?mode=mixed      混合（全部隨機跳）
           index.html?mode=install    只跑安裝程式
@@ -129,6 +143,7 @@
             height: 32px; background-color: #1f1f1f; display: flex;
             justify-content: space-between; align-items: center; color: #fff;
             font-size: 12px; padding-left: 12px; cursor: grab;
+            touch-action: none; /* 觸控時拖曳標題列不要捲動頁面 */
         }
         .title-bar:active { cursor: grabbing; }
 
@@ -178,8 +193,10 @@
         /* 縮放手柄 (右下角) */
         .resize-handle {
             position: absolute; bottom: 0; right: 0; width: 16px; height: 16px;
-            cursor: nwse-resize; z-index: 11;
+            cursor: nwse-resize; z-index: 11; touch-action: none;
         }
+        @media (pointer: coarse) { .resize-handle { width: 30px; height: 30px; } }
+        .d-icon { touch-action: manipulation; }
 
         /* 檔案總管/資源回收桶特有 */
         #window-this-pc { background-color: var(--explorer-bg); }
@@ -387,7 +404,7 @@
 
         /* 窄螢幕（手機）版面 */
         @media (max-width: 700px) {
-            .sim-window { min-width: 0 !important; width: 96vw !important; max-width: 96vw !important; height: 62vh !important; max-height: 62vh !important; }
+            .sim-window:not(.tiled) { min-width: 0 !important; width: 96vw !important; max-width: 96vw !important; height: 62vh !important; max-height: 62vh !important; }   /* multi 的視窗（.tiled）自己排版，不套用 */
             #term { font-size: 12px; padding: 8px 10px; }
             #start-menu-panel { width: 94vw; height: auto; max-height: 72vh; overflow: auto; }
             .pinned-apps, .recommended-items { grid-template-columns: repeat(4, 1fr); }
@@ -744,7 +761,7 @@
     function makeDraggable(element, dragHandle) {
         let startX, startY, startLeft, startTop;
 
-        dragHandle.onmousedown = function(e) {
+        dragHandle.onpointerdown = function(e) {
             // 忽略控制按鈕的點擊，且不允許拖曳最大化的視窗
             if (e.target.closest('.window-controls') || element.classList.contains('maximized')) {
                 return;
@@ -771,8 +788,9 @@
             startTop = rect.top;
 
             // 註冊滑鼠移動和放開的事件監聽器
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('pointermove', onMouseMove);
+            document.addEventListener('pointerup', onMouseUp);
+            document.addEventListener('pointercancel', onMouseUp);
         };
 
         function onMouseMove(e) {
@@ -789,8 +807,9 @@
             element.style.transition = ""; 
             
             // 移除事件監聽器，避免不必要的計算
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+            document.removeEventListener('pointermove', onMouseMove);
+            document.removeEventListener('pointerup', onMouseUp);
+            document.removeEventListener('pointercancel', onMouseUp);
         }
     }
 
@@ -798,7 +817,7 @@
 
     // 縮放視窗 (原檔呼叫了但未定義，補上)
     function makeResizable(element, handle) {
-        handle.onmousedown = function(e) {
+        handle.onpointerdown = function(e) {
             if (element.classList.contains('maximized')) return;
             e.preventDefault();
             e.stopPropagation();
@@ -810,17 +829,36 @@
             element.style.transform = 'none';
             element.style.zIndex = ++zIndexCounter;
             function move(ev) {
-                element.style.width = Math.max(400, sw + ev.clientX - sx) + 'px';
-                element.style.height = Math.max(300, sh + ev.clientY - sy) + 'px';
+                const tiled = element.classList.contains('tiled');
+                element.style.width = Math.max(tiled ? 200 : Math.min(400, innerWidth - 16), sw + ev.clientX - sx) + 'px';
+                element.style.height = Math.max(tiled ? 150 : 300, sh + ev.clientY - sy) + 'px';
             }
             function up() {
                 element.style.transition = '';
-                document.removeEventListener('mousemove', move);
-                document.removeEventListener('mouseup', up);
+                document.removeEventListener('pointermove', move);
+                document.removeEventListener('pointerup', up);
+                document.removeEventListener('pointercancel', up);
             }
-            document.addEventListener('mousemove', move);
-            document.addEventListener('mouseup', up);
+            document.addEventListener('pointermove', move);
+            document.addEventListener('pointerup', up);
+            document.addEventListener('pointercancel', up);
         };
+    }
+
+    // 標題列：滑鼠雙擊 或 觸控雙點 → 最大化 / 還原（兩者各自處理，避免同一次雙點觸發兩次）
+    let lastTouchToggle = 0;
+    function bindTitleToggle(w, id) {
+        const bar = w.querySelector('.title-bar');
+        let lastTap = 0;
+        bar.addEventListener('dblclick', e => {
+            if (e.target.closest('.window-controls') || Date.now() - lastTouchToggle < 700) return;
+            toggleMaximize(id);
+        });
+        bar.addEventListener('pointerup', e => {
+            if (e.pointerType !== 'touch' || e.target.closest('.window-controls')) return;
+            const now = Date.now();
+            if (now - lastTap < 350) { lastTap = 0; lastTouchToggle = now; toggleMaximize(id); } else lastTap = now;
+        });
     }
 
     // ---- 視窗管理（仿一般電腦行為）----
@@ -922,12 +960,12 @@
     document.addEventListener('DOMContentLoaded', () => {
         for (const id in WIN_TASKBAR) {
             const w = document.getElementById(id);
-            w.addEventListener('mousedown', () => { if (focusedId !== id) focusWindow(id); });
-            w.querySelector('.title-bar').addEventListener('dblclick', e => {
-                if (!e.target.closest('.window-controls')) toggleMaximize(id);
-            });
+            w.addEventListener('pointerdown', () => { if (focusedId !== id) focusWindow(id); });
+            bindTitleToggle(w, id);
             document.getElementById(WIN_TASKBAR[id]).addEventListener('click', () => taskbarClick(id));
         }
+        // 桌面圖示：觸控單點就開啟（滑鼠仍是雙擊）
+        document.querySelectorAll('.d-icon[ondblclick]').forEach(ic => ic.addEventListener('pointerup', e => { if (e.pointerType === 'touch') ic.ondblclick(e); }));
         // 開始選單釘選：PowerShell / File Explorer 可開啟視窗
         const pinMap = { 'PowerShell': 'terminal-window', 'File Explorer': 'window-this-pc' };
         document.querySelectorAll('.pinned-app-item').forEach(item => {
@@ -1317,18 +1355,20 @@
   (() => {
     const w = $('#installer'), t = $('#inst-title');
     let sx, sy, sl, st, drag = false;
-    t.addEventListener('mousedown', e => {
+    t.style.touchAction = 'none';
+    t.addEventListener('pointerdown', e => {
       const r = w.getBoundingClientRect();
       w.style.transform = 'none'; w.style.left = r.left + 'px'; w.style.top = r.top + 'px';
       sx = e.clientX; sy = e.clientY; sl = r.left; st = r.top; drag = true;
       e.preventDefault();
     });
-    document.addEventListener('mousemove', e => {
+    document.addEventListener('pointermove', e => {
       if (!drag) return;
       w.style.left = (sl + e.clientX - sx) + 'px';
       w.style.top = Math.min(Math.max(0, st + e.clientY - sy), window.innerHeight - 80) + 'px';
     });
-    document.addEventListener('mouseup', () => { drag = false; });
+    document.addEventListener('pointerup', () => { drag = false; });
+    document.addEventListener('pointercancel', () => { drag = false; });
   })();
 
   /* ---------- 手機更新畫面（全螢幕，跑一輪）：iphone / android 兩個模式 ---------- */
@@ -1642,20 +1682,29 @@
     src.parentNode.appendChild(w);
     makeDraggable(w, w.querySelector('.title-bar'));
     makeResizable(w, w.querySelector('.resize-handle'));
-    w.addEventListener('mousedown', () => { w.style.zIndex = ++zIndexCounter; });
-    w.querySelector('.title-bar').addEventListener('dblclick', e => { if (!e.target.closest('.window-controls')) toggleMaximize(nid); });
+    w.addEventListener('pointerdown', () => { w.style.zIndex = ++zIndexCounter; });
+    bindTitleToggle(w, nid);
+    w.classList.add('tiled');
     return { win: w, term: t };
   }
 
-  // 把 n 個視窗排成不重疊的格子（隨機挑格子），再依格子大小自動縮小字體，讓內容放得下
+  // 把 n 個視窗大致排成格子（隨機挑格子，再稍微隨機偏移），並依視窗大小自動縮小字體，讓內容放得下
   function layoutCells(n) {
     const W = innerWidth, H = innerHeight - 48, g = 6;
     let cols, rows;
-    if (n === 2) { [cols, rows] = Math.random() < 0.5 ? [2, 1] : [1, 2]; } else { cols = 2; rows = 2; }
+    if (innerWidth < 700) { cols = 1; rows = n; }   // 手機（窄螢幕）：視窗上下堆疊
+    else if (n === 2) { [cols, rows] = Math.random() < 0.5 ? [2, 1] : [1, 2]; } else { cols = 2; rows = 2; }
     const cw = Math.floor(W / cols), ch = Math.floor(H / rows);
     const cells = [];
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push({ left: c * cw + g, top: r * ch + g, width: cw - 2 * g, height: ch - 2 * g });
     const chosen = cells.sort(() => Math.random() - 0.5).slice(0, n);
+    // 讓位置不要太工整：大小略微縮放，位置在格子內外隨機偏移（最多約 10%，可能稍微蓋到隔壁），並限制在螢幕範圍內
+    chosen.forEach(c => {
+      c.width = Math.round(c.width * (0.92 + Math.random() * 0.08));
+      c.height = Math.round(c.height * (0.92 + Math.random() * 0.08));
+      c.left = Math.round(Math.min(Math.max(0, c.left + (Math.random() * 2 - 1) * cw * 0.1), W - c.width));
+      c.top = Math.round(Math.min(Math.max(0, c.top + (Math.random() * 2 - 1) * ch * 0.1), H - c.height));
+    });
     // 畫面最高約 19 列、最寬約 84 個字元：以此估算字體大小（單位 px），範圍 8 ~ 12
     const fs = chosen.map(c => Math.max(8, Math.min(12, Math.floor((c.height - 56) / 19 / 1.4), Math.floor((c.width - 24) / (84 * 0.55)))));
     return chosen.map((c, i) => Object.assign(c, { fs: fs[i] }));
@@ -1666,11 +1715,12 @@
   }
 
   async function multi(id) {
-    const n = rand(2, 4);
+    const n = Math.min(rand(2, 4), innerWidth < 700 ? 3 : 4);   // 手機最多 3 個，避免每個視窗太矮
     const modes = [...TERM_MODES].sort(() => Math.random() - 0.5).slice(0, n);
     const mainWin = $('#terminal-window'), mainTerm = $('#term'), baseTok = tok;
     const saved = { css: mainWin.style.cssText, max: mainWin.classList.contains('maximized') };
     mainWin.classList.remove('maximized');
+    mainWin.classList.add('tiled');
     const cells = layoutCells(n);
     placeWindow(mainWin, cells[0]);
     mainTerm.classList.add('small');
@@ -1696,6 +1746,7 @@
       toks.forEach(t => { t.dead = true; });
       slots.slice(1).forEach(sl => sl.win.remove());
       mainTerm.classList.remove('small');
+      mainWin.classList.remove('tiled');
       mainTerm.style.fontSize = '';
       mainTerm.replaceChildren();
       mainWin.style.cssText = saved.css;
@@ -1782,17 +1833,18 @@
   }
 
   // 網址參數 ?mode=... 指定模式；沒有參數（或參數無效）時：
-  //   手機 → iPhone 跑 iphone、Android 跑 android（其他手機隨機）；電腦 → multi（多視窗）
+  //   手機 → 自己品牌的更新畫面（iphone / android）或 charge 隨機二選一；電腦 → multi（多視窗）
   //   ?mode=random：電腦從 SINGLE_POOL 隨機選一個單一模式，並一直重複跑（舊的預設行為）
-  //   ?mode=phone 為自動：依裝置判斷 iphone / android，無法判斷時隨機
+  //   ?mode=phone 與手機預設相同：自己品牌的更新畫面（依裝置判斷 iphone / android，無法判斷時隨機）或 charge，隨機二選一
   const ua = navigator.userAgent;
   const phoneMode = /iPhone|iPod|iPad/i.test(ua) ? 'iphone' : /Android/i.test(ua) ? 'android' : pick(['iphone', 'android']);
   const q = new URLSearchParams(location.search).get('mode');
   const SINGLE_POOL = DESKTOP_POOL.filter(m => m !== 'multi');   // random 模式用：單一畫面（不含 multi）
-  const start = q === 'phone' ? phoneMode
-    : q === 'random' ? (isMobile ? phoneMode : pick(SINGLE_POOL))
+  const phoneRandom = pick([phoneMode, 'charge']);   // 手機預設：自己品牌的更新畫面 或 充電畫面，隨機二選一
+  const start = q === 'phone' ? phoneRandom
+    : q === 'random' ? (isMobile ? phoneRandom : pick(SINGLE_POOL))
     : ALL_MODES.includes(q) || q === 'mixed' ? q
-    : (isMobile ? phoneMode : 'multi');
+    : (isMobile ? phoneRandom : 'multi');
   loop(++run, start);
 })();
 </script>

@@ -1,5 +1,7 @@
 # busy
 
+![multi 模式截圖：多個終端機視窗與安裝視窗同時運作](images/multi.jpg)
+
 模擬 Windows 11 桌面的單頁網頁：桌面上有 PowerShell 視窗，持續顯示編譯、下載、日誌、安裝、密碼比對與破解、系統更新等畫面；手機另有更新與充電的全螢幕畫面。
 
 單一 `index.html`，沒有框架、沒有外部 script，直接開啟即可使用，也可放在 GitHub Pages。

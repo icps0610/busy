@@ -14,8 +14,8 @@
         ------------------------------------------------------------
         組合模式
         ------------------------------------------------------------
-          multi      多視窗：同時開 2~4 個終端機視窗，各跑一個隨機的終端機畫面（compile / download / log / pkg / aircrack / hashcat
-                     不重複挑選）並一直循環。視窗大致排成格子，位置與大小再隨機偏移，可能略微重疊。
+          multi      多視窗：同時開 2~4 個終端機視窗，各跑一個隨機的終端機畫面（compile / download / log / pkg / install / aircrack / hashcat
+                     不重複挑選）並一直循環。有 install 時會跳出安裝視窗（可拖曳）。視窗大致排成格子，位置與大小再隨機偏移，可能略微重疊。
                      電腦的預設；手機為上下堆疊、最多 3 個；在 mixed 中最長 10 分鐘
           mixed      混合：一直隨機跳，每跑完一輪就換成另一個模式（不連續重複），直到重新整理。
                      電腦只在電腦模式（含 multi）間切換；手機在所有模式間切換（不含 multi）
@@ -1667,7 +1667,7 @@
   }
 
   /* ---------- multi：同時開 2~4 個終端機視窗，各跑一個畫面（隨機位置），一直循環 ---------- */
-  const TERM_MODES = ['compile', 'download', 'log', 'pkg', 'aircrack', 'hashcat'];
+  const TERM_MODES = ['compile', 'download', 'log', 'pkg', 'install', 'aircrack', 'hashcat'];   // install：跳出安裝視窗（只會有一個），終端機同步跑安裝日誌
 
   function makeExtraWindow(nid) {
     const src = $('#terminal-window');

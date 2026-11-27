@@ -8,8 +8,7 @@
 
 ## 使用方式
 
-直接開啟 `index.html`，電腦預設跑  `multi` ，手機跑 (`iphone  `android`）或 `charge` 隨機
-或用網址參數指定模式，例如 `index.html?mode=install`。
+直接開啟 `index.html`，電腦預設跑  `multi` ，手機跑 (`iphone` ` android`）或 `charge` 隨機或用網址參數指定模式，例如 `index.html?mode=install`。
 
 
 ## 組合模式

@@ -1,6 +1,6 @@
 # busy
 
-<img width="1456" height="820" alt="image" src="https://github.com/user-attachments/assets/e693c59c-ed4e-4751-8961-ce24cdde14d0" />
+<img width="1919" height="1080" alt="image" src="https://github.com/user-attachments/assets/e9b38e9a-a022-498b-8fa3-9bf56200ab26" />
 
 模擬 Windows 11 桌面的單頁網頁：桌面上有 PowerShell 視窗，持續顯示編譯、下載、日誌、安裝、密碼比對與破解、系統更新等畫面；手機另有更新與充電的全螢幕畫面。
 
